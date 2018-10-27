@@ -1,0 +1,5 @@
+C:\Users\Moataz\ATLAS Root Directory\Live Folders\Workspace\Software\Project Tytanium\Source Code\Tytanium\Handler\bin\Debug\Handler.dll
+C:\Users\Moataz\ATLAS Root Directory\Live Folders\Workspace\Software\Project Tytanium\Source Code\Tytanium\Handler\bin\Debug\Handler.pdb
+C:\Users\Moataz\ATLAS Root Directory\Live Folders\Workspace\Software\Project Tytanium\Source Code\Tytanium\Handler\obj\Debug\Handler.csprojResolveAssemblyReference.cache
+C:\Users\Moataz\ATLAS Root Directory\Live Folders\Workspace\Software\Project Tytanium\Source Code\Tytanium\Handler\obj\Debug\Handler.dll
+C:\Users\Moataz\ATLAS Root Directory\Live Folders\Workspace\Software\Project Tytanium\Source Code\Tytanium\Handler\obj\Debug\Handler.pdb
