@@ -2,8 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Tytanium.Scanner
 {
@@ -27,6 +25,7 @@ namespace Tytanium.Scanner
         public enum Class
         {
             NotApplicable,
+            Assignment_Identifier,         //self eplainatory
 
             DataType_int,
             DataType_float,

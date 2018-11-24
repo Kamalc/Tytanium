@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Handler;
 
 namespace Tytanium.Scanner
@@ -15,7 +11,7 @@ namespace Tytanium.Scanner
         const string OperatorInvalid = "usage of operator %LITERAL% is unrecognized! in line %LINE%";
         const string TokenInvalid = "usage of invalid token at line %LINE%";
 
-        int curLine = 1;
+        private int curLine = 1;
 
         public List<Error> ErrorList = new List<Error>(); 
 
@@ -28,9 +24,9 @@ namespace Tytanium.Scanner
         List<char> Numerics = new List<char>();
         List<char> Alphabet = new List<char>();
 
-        int ScannerLocation=0;
+        int ScannerLocation;
         string SubjectText;
-
+        
         bool isWS()
         {
             if (SubjectText[ScannerLocation] == ' ' || SubjectText[ScannerLocation] == '\n' || SubjectText[ScannerLocation] == '\t')
@@ -105,10 +101,10 @@ namespace Tytanium.Scanner
             {
                 buffer += SubjectText[ScannerLocation++];
             }
-            if (Refrence.RefrenceTable.Keys.Contains(buffer))
-                Tokens.Add(new Token(buffer, Refrence.UpperClass.ReservedWord, Refrence.RefrenceTable[buffer]));
-            else
-                Tokens.Add(new Token(buffer, Refrence.UpperClass.Identifier,Refrence.Class.NotApplicable));
+
+            Tokens.Add(Refrence.RefrenceTable.Keys.Contains(buffer)
+                ? new Token(buffer, Refrence.UpperClass.ReservedWord, Refrence.RefrenceTable[buffer])
+                : new Token(buffer, Refrence.UpperClass.Identifier, Refrence.Class.Assignment_Identifier));
         }
 
         void Comment()
@@ -131,7 +127,7 @@ namespace Tytanium.Scanner
                 buffer += SubjectText[ScannerLocation++];
 
             }
-            Tokens.Add(new Token(buffer, Refrence.UpperClass.Comment));
+            // Tokens.Add(new Token(buffer, Refrence.UpperClass.Comment));
         }
 
         void String()
@@ -193,11 +189,9 @@ namespace Tytanium.Scanner
                 ErrorList.Add(new Error(FormatError.Replace("%TYPE%", "\""+ buffer + SubjectText[ScannerLocation] + "\"").Replace("%CHAR%", curLine.ToString()).Replace("%REASON%", "Invalid Numeric Value"), Error.ErrorType.ScannerError));
             }
 
-            if (floated)
-                Tokens.Add(new Token(buffer, Refrence.UpperClass.Constant, Refrence.Class.DataType_float));
-            else
-                Tokens.Add(new Token(buffer, Refrence.UpperClass.Constant, Refrence.Class.DataType_int));
-
+            Tokens.Add(floated
+                ? new Token(buffer, Refrence.UpperClass.Constant, Refrence.Class.DataType_float)
+                : new Token(buffer, Refrence.UpperClass.Constant, Refrence.Class.DataType_int));
         }
 
         void Operator()
@@ -205,8 +199,7 @@ namespace Tytanium.Scanner
             string buffer = ""+SubjectText[ScannerLocation];
             int maxLength=int.MinValue;
 
-            List<string> Possiblities = new List<string>();
-            Possiblities.Add(buffer);
+            List<string> Possiblities = new List<string> {buffer};
 
             foreach (string s in Refrence.OperatorLookup.Values)
             {
@@ -244,8 +237,7 @@ namespace Tytanium.Scanner
 
                 string buffer = "" + SubjectText[ScannerLocation];
 
-                List<string> Possiblities = new List<string>();
-                Possiblities.Add(buffer);
+                List<string> Possiblities = new List<string> {buffer};
 
                 for (int i = 1; i < ScannerMaxLength && ScannerLocation + 1 < SubjectText.Length; i++)
                 {

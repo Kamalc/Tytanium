@@ -42,15 +42,16 @@
   <ItemGroup>
     <Compile Include="Parser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TreeNode.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Tytanium.Handler\Tytanium.Handler.csproj">
       <Project>{ce4f1a96-aa86-434b-bc4f-5eb9c662db9f}</Project>
       <Name>Tytanium.Handler</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Tytanium.ObjectCode\Tytanium.ObjectCode.csproj">
-      <Project>{ca771ae8-4a0d-4114-8819-327afb1e16f6}</Project>
-      <Name>Tytanium.ObjectCode</Name>
+    <ProjectReference Include="..\Tytanium.Scanner\Tytanium.Scanner.csproj">
+      <Project>{93124669-a173-4472-9503-1cfd4d73c84c}</Project>
+      <Name>Tytanium.Scanner</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

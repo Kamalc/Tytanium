@@ -33,6 +33,7 @@
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.scanToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.LineNoBox = new System.Windows.Forms.RichTextBox();
+            this.parseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -51,7 +52,8 @@
             // 
             this.menuStrip1.BackColor = System.Drawing.Color.White;
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.scanToolStripMenuItem});
+            this.scanToolStripMenuItem,
+            this.parseToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(734, 24);
@@ -76,6 +78,13 @@
             this.LineNoBox.Size = new System.Drawing.Size(27, 349);
             this.LineNoBox.TabIndex = 2;
             this.LineNoBox.Text = "";
+            // 
+            // parseToolStripMenuItem
+            // 
+            this.parseToolStripMenuItem.Name = "parseToolStripMenuItem";
+            this.parseToolStripMenuItem.Size = new System.Drawing.Size(47, 20);
+            this.parseToolStripMenuItem.Text = "Parse";
+            this.parseToolStripMenuItem.Click += new System.EventHandler(this.parseToolStripMenuItem_Click);
             // 
             // TestUI
             // 
@@ -107,6 +116,7 @@
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem scanToolStripMenuItem;
         private System.Windows.Forms.RichTextBox LineNoBox;
+        private System.Windows.Forms.ToolStripMenuItem parseToolStripMenuItem;
     }
 }
 

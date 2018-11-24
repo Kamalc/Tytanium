@@ -13,3 +13,21 @@ C:\Users\Moataz\ATLAS Root Directory\Live Folders\Workspace\Software\Project Tyt
 C:\Users\Moataz\ATLAS Root Directory\Live Folders\Workspace\Software\Project Tytanium\Source Code\Tytanium\Tytanium.TestUI\obj\Debug\Tytanium.TestUI.resources
 C:\Users\Moataz\ATLAS Root Directory\Live Folders\Workspace\Software\Project Tytanium\Source Code\Tytanium\Tytanium.TestUI\obj\Debug\Tytanium.TokenTable.resources
 C:\Users\Moataz\ATLAS Root Directory\Live Folders\Workspace\Software\Project Tytanium\Source Code\Tytanium\Tytanium.TestUI\obj\Debug\Tytanium.Test UI.csproj.GenerateResource.Cache
+D:\MyProjects\Tytanium\Tytanium.TestUI\bin\Debug\Tytanium.exe.config
+D:\MyProjects\Tytanium\Tytanium.TestUI\obj\Debug\Tytanium.exe
+D:\MyProjects\Tytanium\Tytanium.TestUI\obj\Debug\Tytanium.pdb
+D:\MyProjects\Tytanium\Tytanium.TestUI\bin\Debug\Tytanium.exe
+D:\MyProjects\Tytanium\Tytanium.TestUI\bin\Debug\Tytanium.pdb
+D:\MyProjects\Tytanium\Tytanium.TestUI\bin\Debug\Handler.dll
+D:\MyProjects\Tytanium\Tytanium.TestUI\bin\Debug\Scanner.dll
+D:\MyProjects\Tytanium\Tytanium.TestUI\bin\Debug\Handler.pdb
+D:\MyProjects\Tytanium\Tytanium.TestUI\bin\Debug\Scanner.pdb
+D:\MyProjects\Tytanium\Tytanium.TestUI\obj\Debug\Tytanium.Test UI.csprojResolveAssemblyReference.cache
+D:\MyProjects\Tytanium\Tytanium.TestUI\obj\Debug\Tytanium.ErrorList.resources
+D:\MyProjects\Tytanium\Tytanium.TestUI\obj\Debug\Tytanium.Properties.Resources.resources
+D:\MyProjects\Tytanium\Tytanium.TestUI\obj\Debug\Tytanium.TestUI.resources
+D:\MyProjects\Tytanium\Tytanium.TestUI\obj\Debug\Tytanium.TokenTable.resources
+D:\MyProjects\Tytanium\Tytanium.TestUI\obj\Debug\Tytanium.Test UI.csproj.GenerateResource.Cache
+D:\MyProjects\Tytanium\Tytanium.TestUI\obj\Debug\Tytanium.ParserResults.resources
+D:\MyProjects\Tytanium\Tytanium.TestUI\bin\Debug\Tytanium.Parser.dll
+D:\MyProjects\Tytanium\Tytanium.TestUI\bin\Debug\Tytanium.Parser.pdb

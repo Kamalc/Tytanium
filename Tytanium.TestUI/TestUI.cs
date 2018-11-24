@@ -1,14 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using Tytanium.Scanner;
 using System.Runtime.InteropServices;
+using Tytanium.Parser;
 
 namespace Tytanium
 {
@@ -61,7 +55,7 @@ namespace Tytanium
 
             for (int i=1;i<=200;i++)
             {
-                LineNoBox.Text += i.ToString() + "\n";
+                LineNoBox.Text += i + "\n";
             }
         }
 
@@ -90,6 +84,27 @@ namespace Tytanium
                 CharCount++;
             else if (CodeBox1.Text.Length - CharCount < 0)
                 CharCount--;
+        }
+
+        private void parseToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Scanner.Scanner S = new Scanner.Scanner(CodeBox1.Text);
+            S.Scan();
+            if (S.ErrorList.Count > 0)
+            {
+                ErrorList EL = new ErrorList(S.ErrorList);
+                EL.Show();
+                return;
+            }
+            Parser.Parser parser = new Parser.Parser(S.Tokens);
+            Tree parseTree = parser.parse();
+            ParserResults parserResults = new ParserResults(parseTree);
+            parserResults.Show();
+            if (parser.Errors.Count > 0)
+            {
+                ErrorList EL = new ErrorList(parser.Errors);
+                EL.Show();
+            }
         }
     }
 }

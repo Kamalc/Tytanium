@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Tytanium.Scanner;
 
@@ -26,7 +21,7 @@ namespace Tytanium
             int index = 1;
             foreach (Token T in TokenSet)
             {
-                TokenView.Rows.Add(new string[] {index.ToString(),T.Literal.ToString(),T.UpperType.ToString(),T.Type.ToString() });
+                TokenView.Rows.Add(index.ToString(), T.Literal, T.UpperType.ToString(), T.Type.ToString());
                 index++;
             }
             TokenView.Refresh();

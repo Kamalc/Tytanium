@@ -5,3 +5,10 @@ C:\Users\Moataz\ATLAS Root Directory\Live Folders\Workspace\Software\Project Tyt
 C:\Users\Moataz\ATLAS Root Directory\Live Folders\Workspace\Software\Project Tytanium\Source Code\Tytanium\Tytanium.Scanner\obj\Debug\Tytanium.Scanner.csprojResolveAssemblyReference.cache
 C:\Users\Moataz\ATLAS Root Directory\Live Folders\Workspace\Software\Project Tytanium\Source Code\Tytanium\Tytanium.Scanner\obj\Debug\Scanner.dll
 C:\Users\Moataz\ATLAS Root Directory\Live Folders\Workspace\Software\Project Tytanium\Source Code\Tytanium\Tytanium.Scanner\obj\Debug\Scanner.pdb
+D:\MyProjects\Tytanium\Tytanium.Scanner\bin\Debug\Scanner.dll
+D:\MyProjects\Tytanium\Tytanium.Scanner\bin\Debug\Scanner.pdb
+D:\MyProjects\Tytanium\Tytanium.Scanner\bin\Debug\Handler.dll
+D:\MyProjects\Tytanium\Tytanium.Scanner\bin\Debug\Handler.pdb
+D:\MyProjects\Tytanium\Tytanium.Scanner\obj\Debug\Tytanium.Scanner.csprojResolveAssemblyReference.cache
+D:\MyProjects\Tytanium\Tytanium.Scanner\obj\Debug\Scanner.dll
+D:\MyProjects\Tytanium\Tytanium.Scanner\obj\Debug\Scanner.pdb

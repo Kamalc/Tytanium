@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Handler
+﻿namespace Handler
 {
     public class Error
     {
@@ -16,12 +10,12 @@ namespace Handler
             SynthesisFailure
         }
 
-        public string ErrorMassege;
+        public string ErrorMessage;
         public ErrorType Type;
 
         public Error(string msg, ErrorType ET)
         {
-            ErrorMassege = msg;
+            ErrorMessage = msg;
             Type = ET;
         }
 
