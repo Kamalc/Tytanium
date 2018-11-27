@@ -8,17 +8,18 @@ namespace Tytanium.Parser
 {
     public class Parser
     {
-        delegate TreeNode ParserFn();
+
+        delegate TreeNode ParserFn(); //Parser Delegation
 
         Dictionary<Refrence.Class, ParserFn> Parsers = new Dictionary<Refrence.Class, ParserFn>();
 
-        List<Refrence.Class> Macros = new List<Refrence.Class>()
+        List<Refrence.Class> Macros = new List<Refrence.Class>() //Things that will get replaced during semantic analysis Endl=>\n\r
         {
             Refrence.Class.Macro_endl
         };
 
         private List<Token> _tokens;
-        public List<Error> Errors;
+        public List<Error> ErrorList;
         private int currentToken;
 
 
@@ -26,7 +27,7 @@ namespace Tytanium.Parser
         public Parser(List<Token> tokens)
         {
             _tokens = tokens;
-            Errors = new List<Error>();
+            ErrorList = new List<Error>();
             currentToken = 0;
 
 
@@ -57,15 +58,21 @@ namespace Tytanium.Parser
             };
         }
 
-        private TreeNode identifier_call()
+        //Invoked in case of identifier intiating statment variable := or variable(.)...etc
+        //May be used in operator overloading and dot operator functions
+        //Applications are limitless
+        private TreeNode identifier_call() 
         {
             NonTerminalTreeNode identifierNode = new NonTerminalTreeNode("Runtime Statment");
             identifierNode.append_child(new TerminalTreeNode("Calling Identifier", _tokens[currentToken]));
             currentToken++;
             identifierNode.append_child(statement());
+            identifierNode.Composite = true;
             return identifierNode;
         }
 
+        //Program Syntitcal tree outer structure
+        //Recursion intiator function
         private TreeNode program()
         {
             NonTerminalTreeNode prog_root = new NonTerminalTreeNode("Program Syntatic structure");
@@ -92,6 +99,7 @@ namespace Tytanium.Parser
             return seq_root;
         }
 
+        //Linear statment parsing
         private TreeNode statement()
         {
             TreeNode root = new NonTerminalTreeNode("Statement");
@@ -99,6 +107,7 @@ namespace Tytanium.Parser
             if (currentToken == _tokens.Count)
                 return null;
 
+            //Comment Ad-Hoc model, will be removed in V2.0
             if (_tokens[currentToken].UpperType == Refrence.UpperClass.Comment)
             {
                 TerminalTreeNode Nodex = new TerminalTreeNode("Comment", _tokens[currentToken]);
@@ -108,21 +117,28 @@ namespace Tytanium.Parser
 
             if (Parsers.Keys.Contains(_tokens[currentToken].Type))
             {
-                root = Parsers[_tokens[currentToken].Type]();
+                root = Parsers[_tokens[currentToken].Type](); //Calling parser function
             }
             else
             {
-                Errors.Add(new Error("Unexpected token " + _tokens[currentToken].Literal, Error.ErrorType.ParserError));
+                ErrorList.Add(new Error("Unexpected token " + _tokens[currentToken].Literal + " in line" + _tokens[currentToken].Line.ToString(), Error.ErrorType.ParserError));
+                currentToken++;
                 return null;
             }
 
-            if (currentToken != _tokens.Count && _tokens[currentToken].Type == Refrence.Class.SemiColon)
+            //if  a statment composite like If,repeat loops, int x=0 where
+            //A single statment is made of multiple statments yet intiated here
+            //then a flag called composite is raised to avoid checking for a not
+            //Existing semicolon
+            if (!root.Composite && match(Refrence.Class.SemiColon))
             {
                 currentToken++;
             }
+
             return root;
         }
 
+        //Supports multiple declarations via the loop below
         private TreeNode declaration_stmt()
         {
             NonTerminalTreeNode dec_node = new NonTerminalTreeNode("Declaration Statment");
@@ -134,15 +150,28 @@ namespace Tytanium.Parser
             {
                 dec_node.append_child(new TerminalTreeNode("Identifier", _tokens[currentToken]));
                 currentToken++;
-                if (_tokens[currentToken].Type == Refrence.Class.Comma)
+                if (_tokens[currentToken].Type==Refrence.Class.AssignmentOperator)
+                {
+                    dec_node.append_child(assign_stmt());
+                }
+                if (_tokens[currentToken].Type != Refrence.Class.Comma)
+                {
+                    break;
+                }
+                else
                 {
                     currentToken++;
                 }
             }
-
+            //Checks in case of function then the statment is composed of declaration and a signature
+            if (currentToken < _tokens.Count && _tokens[currentToken].Type == Refrence.Class.LeftBracket)
+            {
+                dec_node.Composite = true;
+            }
             return dec_node;
         }
 
+        //Parses function calls with parameters
         private TreeNode function_call()
         {
             currentToken--;
@@ -169,6 +198,7 @@ namespace Tytanium.Parser
             return fnHeader;
         }
 
+        //Parses the 2nd half of the function declaration Function Name (Attributes)
         private TreeNode function_sig()
         {
             currentToken--;
@@ -189,10 +219,14 @@ namespace Tytanium.Parser
                 currentToken++;
             }
             fnHeader.append_child(Attributes);
+            fnHeader.Composite = true;
             currentToken++;
             return fnHeader;
         }
 
+        //Switches the parser to an in function mode
+        //to avoid nesting functions (lambda may still be made though if intented)
+        //can handle multiple returns
         private TreeNode function_body()
         {
             Parsers[Refrence.Class.LeftBracket] = function_call;
@@ -204,7 +238,7 @@ namespace Tytanium.Parser
                 if (_tokens[currentToken].Type == Refrence.Class.RightCurlyBrace)
                 {
                     currentToken++;
-                    return fnBody;
+                    break;
                 }
                 else if (_tokens[currentToken].Type == Refrence.Class.Directive_return)
                 {
@@ -224,10 +258,11 @@ namespace Tytanium.Parser
                 }
             }
             Parsers[Refrence.Class.LeftBracket] = function_sig;
+            fnBody.Composite = true;
             return fnBody;
-
         }
 
+        //Entry function
         public Tree parse()
         {
             if (_tokens == null) return null;
@@ -236,6 +271,9 @@ namespace Tytanium.Parser
             return new Tree(program());
         }
 
+        //Now doesn't change caret location
+        //Merly used to register errors and check for matching
+        //Will change the caret location in V2
         private bool match(Refrence.Class expected)
         {
             if (currentToken < _tokens.Count && _tokens[currentToken].Type == expected)
@@ -243,15 +281,17 @@ namespace Tytanium.Parser
             else
             {
                 if (currentToken >= _tokens.Count)
-                    Errors.Add(new Error("Expected a " + expected + " but reached End Of File!",
+                    ErrorList.Add(new Error("Expected a " + expected + " but reached End Of File!",
                         Error.ErrorType.ParserError));
                 else
-                    Errors.Add(new Error("Expected a " + expected + " but a " + _tokens[currentToken].Type + " was found!",
+                    ErrorList.Add(new Error("Expected a " + expected + " in line " +_tokens[currentToken].Line.ToString() + " but a " + _tokens[currentToken].Type + " was found!",
                         Error.ErrorType.ParserError));
             }
             return false;
         }
 
+        //Jigsaw if elseif^n else model
+        //prevents a dual else or else if preceding else
         private TreeNode if_stmt()
         {
             NonTerminalTreeNode root = new NonTerminalTreeNode("If statement");
@@ -262,6 +302,10 @@ namespace Tytanium.Parser
             match(Refrence.Class.BranchingAgent_then);
             currentToken++;
             int ElsesCount = 1;
+            //seQ is our buffer each time we transfer from an if body to an else/elseif body we
+            //append seQ and restart all over again in the new body
+            //We keep track of our elses via Elses count
+            //which in reality is an if body count
             NonTerminalTreeNode seQ = new NonTerminalTreeNode("If Body");
             while (_tokens[currentToken].Type != Refrence.Class.BranchingAgent_end)
             {
@@ -269,7 +313,7 @@ namespace Tytanium.Parser
                 {
                     if (ElsesCount == 0)
                     {
-                        Errors.Add(new Error("An ElseIf Scope can not be opened following an else scope", Error.ErrorType.ParserError));
+                        ErrorList.Add(new Error("An ElseIf Scope can not be opened following an else scope", Error.ErrorType.ParserError));
                     }
                     currentToken++;
                     root.append_child(seQ);
@@ -286,21 +330,24 @@ namespace Tytanium.Parser
                 {
                     if (ElsesCount == 0)
                     {
-                        Errors.Add(new Error("A single if can not contain 2 else scopes", Error.ErrorType.ParserError));
+                        ErrorList.Add(new Error("A single if can not contain 2 else scopes", Error.ErrorType.ParserError));
                     }
                     ElsesCount = 0;
                     currentToken++;
                     root.append_child(seQ);
                     seQ = new NonTerminalTreeNode("Else Body");
                 }
+                //All the branching above sets the seQ for this linear statment to append statments from tokens
                 seQ.append_child(statement());
             }
             root.append_child(seQ);
             match(Refrence.Class.BranchingAgent_end);
             currentToken++;
+            root.Composite = true;
             return root;
         }
 
+        //Repeat bounds parser
         private TreeNode repeat_stmt()
         {
             NonTerminalTreeNode root = new NonTerminalTreeNode("Loop (Repeat)");
@@ -317,6 +364,7 @@ namespace Tytanium.Parser
             currentToken++;
             root.append_child(exp());
             root.append_child(seQ);
+            root.Composite = true;
             return root;
         }
 
@@ -342,7 +390,8 @@ namespace Tytanium.Parser
 
         private TreeNode assign_stmt()
         {
-            currentToken--;
+            currentToken--; //assign stmt is invoked by := therefore we must backtrack to find
+                            //the target of assignment
             NonTerminalTreeNode root = new NonTerminalTreeNode("Assign");
             if (_tokens[currentToken].Type == Refrence.Class.Assignment_Identifier)
             {
@@ -444,6 +493,12 @@ namespace Tytanium.Parser
                 currentToken++;
                 return root;
             }
+            if (_tokens[currentToken+1].Type==Refrence.Class.LeftBracket)
+            {
+                currentToken++;
+                root =function_call();
+                return root;
+            }
 
             switch (_tokens[currentToken].Type)
             {
@@ -467,7 +522,7 @@ namespace Tytanium.Parser
                     currentToken++;
                     break;
                 default:
-                    Errors.Add(new Error("Unexpected token " + _tokens[currentToken].Literal, Error.ErrorType.ParserError));
+                    ErrorList.Add(new Error("Unexpected token " + _tokens[currentToken].Literal + " in line" + _tokens[currentToken].Line.ToString(), Error.ErrorType.ParserError));
                     currentToken++;
                     break;
             }

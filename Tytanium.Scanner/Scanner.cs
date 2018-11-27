@@ -106,9 +106,9 @@ namespace Tytanium.Scanner
                 buffer += SubjectText[ScannerLocation++];
             }
             if (Refrence.RefrenceTable.Keys.Contains(buffer))
-                Tokens.Add(new Token(buffer, Refrence.UpperClass.ReservedWord, Refrence.RefrenceTable[buffer]));
+                Tokens.Add(new Token(buffer, Refrence.UpperClass.ReservedWord, Refrence.RefrenceTable[buffer],curLine));
             else
-                Tokens.Add(new Token(buffer, Refrence.UpperClass.Identifier, Refrence.Class.Assignment_Identifier));
+                Tokens.Add(new Token(buffer, Refrence.UpperClass.Identifier, Refrence.Class.Assignment_Identifier, curLine));
         }
 
         void Comment()
@@ -194,9 +194,9 @@ namespace Tytanium.Scanner
             }
 
             if (floated)
-                Tokens.Add(new Token(buffer, Refrence.UpperClass.Constant, Refrence.Class.DataType_float));
+                Tokens.Add(new Token(buffer, Refrence.UpperClass.Constant, Refrence.Class.DataType_float, curLine));
             else
-                Tokens.Add(new Token(buffer, Refrence.UpperClass.Constant, Refrence.Class.DataType_int));
+                Tokens.Add(new Token(buffer, Refrence.UpperClass.Constant, Refrence.Class.DataType_int, curLine));
 
         }
 
@@ -226,7 +226,7 @@ namespace Tytanium.Scanner
             {
                 if (Refrence.RefrenceTable.Keys.Contains(s))
                 {
-                    Tokens.Add(new Token(s, Refrence.UpperClass.Operator, Refrence.RefrenceTable[s]));
+                    Tokens.Add(new Token(s, Refrence.UpperClass.Operator, Refrence.RefrenceTable[s], curLine));
                     ScannerLocation += s.Length;
                     return;
                 }

@@ -10,6 +10,8 @@ namespace Tytanium.Parser
         public abstract string getLabel();
 
         public abstract string  print_dot(int id, ref int maxId);
+
+        public bool Composite=false;
     }
 
     public class NonTerminalTreeNode : TreeNode

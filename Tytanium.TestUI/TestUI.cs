@@ -98,11 +98,16 @@ namespace Tytanium
             }
             Parser.Parser parser = new Parser.Parser(S.Tokens);
             Tree parseTree = parser.parse();
+            if (parser.ErrorList.Count > 0)
+            {
+                ErrorList ELP = new ErrorList(S.ErrorList);
+                ELP.Show();
+            }
             ParserResults parserResults = new ParserResults(parseTree);
             parserResults.Show();
-            if (parser.Errors.Count > 0)
+            if (parser.ErrorList.Count > 0)
             {
-                ErrorList EL = new ErrorList(parser.Errors);
+                ErrorList EL = new ErrorList(parser.ErrorList);
                 EL.Show();
             }
         }

@@ -21,9 +21,9 @@ namespace Tytanium
 
         private void TokenTable_Load(object sender, EventArgs e)
         {
-            this.Size = new Size(1280, 720);
+            this.Size = new Size(720, 360);
             ConstructTreeView();
-            ParserTreeView.ExpandAll();
+            //ParserTreeView.ExpandAll();
         }
 
         private void ConstructTreeView()
@@ -35,6 +35,10 @@ namespace Tytanium
 
         private System.Windows.Forms.TreeNode CreateTreeViewNode(TreeNode node)
         {
+            if (node==null)
+            {
+                return new System.Windows.Forms.TreeNode("Parser Error");
+            }
             System.Windows.Forms.TreeNode res = new System.Windows.Forms.TreeNode(node.getLabel());
             if (node is NonTerminalTreeNode)
             {
@@ -45,27 +49,6 @@ namespace Tytanium
                 }
             }
             return res;
-        }
-
-        private void ConstructTreeImage()
-        {
-            //string inputFilename = "tree" + DateTime.Now.Year + "-" + DateTime.Now.Month + "-" + DateTime.Now.Day + ".dot";
-            //string dotOutput = Tree.print_dot();
-            //File.WriteAllText(inputFilename, dotOutput);
-            //string outputFilename = inputFilename + ".png";
-            //Process p = new Process
-            //{
-            //    StartInfo =
-            //    {
-            //        UseShellExecute = false,
-            //        RedirectStandardOutput = false,
-            //        FileName = @"D:\Program Files (x86)\Graphviz2.38\bin\dot.exe",
-            //        Arguments = "-Tpng -O " + inputFilename
-            //    }
-            //};
-            //p.Start();
-            //p.WaitForExit();
-            //ParserTreeImage.Image = new Bitmap(outputFilename);
         }
     }
 }
