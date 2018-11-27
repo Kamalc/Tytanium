@@ -37,7 +37,7 @@ namespace Tytanium.Scanner
 
             BranchingAgent_if,
             BranchingAgent_else,
-            BranchingAgent_elseIf,
+            BranchingAgent_elseif,
             BranchingAgent_then,
             BranchingAgent_end,
             LoopBound_repeat,          //until, repeat....etc

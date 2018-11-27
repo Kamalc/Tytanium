@@ -21,8 +21,9 @@ namespace Tytanium
 
         private void TokenTable_Load(object sender, EventArgs e)
         {
+            this.Size = new Size(1280, 720);
             ConstructTreeView();
-            ConstructTreeImage();
+            ParserTreeView.ExpandAll();
         }
 
         private void ConstructTreeView()

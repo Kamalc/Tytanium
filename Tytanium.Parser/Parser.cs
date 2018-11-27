@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Handler;
@@ -12,6 +12,11 @@ namespace Tytanium.Parser
 
         Dictionary<Refrence.Class, ParserFn> Parsers = new Dictionary<Refrence.Class, ParserFn>();
 
+        List<Refrence.Class> Macros = new List<Refrence.Class>()
+        {
+            Refrence.Class.Macro_endl
+        };
+
         private List<Token> _tokens;
         public List<Error> Errors;
         private int currentToken;
@@ -23,6 +28,8 @@ namespace Tytanium.Parser
             _tokens = tokens;
             Errors = new List<Error>();
             currentToken = 0;
+
+
 
             //Intializing parser refrence dictionary
             Parsers = new Dictionary<Refrence.Class, ParserFn>()
@@ -53,7 +60,7 @@ namespace Tytanium.Parser
         private TreeNode identifier_call()
         {
             NonTerminalTreeNode identifierNode = new NonTerminalTreeNode("Runtime Statment");
-            identifierNode.append_child(new TerminalTreeNode("Calling Identifier",_tokens[currentToken]));
+            identifierNode.append_child(new TerminalTreeNode("Calling Identifier", _tokens[currentToken]));
             currentToken++;
             identifierNode.append_child(statement());
             return identifierNode;
@@ -73,9 +80,6 @@ namespace Tytanium.Parser
         {
             NonTerminalTreeNode seq_root = new NonTerminalTreeNode("Statements sequence");
 
-            //while (currentToken != _tokens.Count && _tokens[currentToken].Type != Refrence.Class.BranchingAgent_end &&
-            //       _tokens[currentToken].Type != Refrence.Class.BranchingAgent_else &&
-            //       _tokens[currentToken].Type != Refrence.Class.LoopBound_until)
             while (currentToken != _tokens.Count)
             {
                 TreeNode child = statement();
@@ -84,14 +88,13 @@ namespace Tytanium.Parser
                     seq_root.append_child(child);
                 }
             }
+
             return seq_root;
         }
 
         private TreeNode statement()
         {
-            NonTerminalTreeNode root = new NonTerminalTreeNode("Statement");
-
-            TreeNode child = null;
+            TreeNode root = new NonTerminalTreeNode("Statement");
 
             if (currentToken == _tokens.Count)
                 return null;
@@ -105,15 +108,13 @@ namespace Tytanium.Parser
 
             if (Parsers.Keys.Contains(_tokens[currentToken].Type))
             {
-                child = Parsers[_tokens[currentToken].Type]();
+                root = Parsers[_tokens[currentToken].Type]();
             }
             else
             {
                 Errors.Add(new Error("Unexpected token " + _tokens[currentToken].Literal, Error.ErrorType.ParserError));
+                return null;
             }
-
-            if (child != null)
-                root.append_child(child);
 
             if (currentToken != _tokens.Count && _tokens[currentToken].Type == Refrence.Class.SemiColon)
             {
@@ -129,11 +130,43 @@ namespace Tytanium.Parser
             currentToken++;
             if (!match(Refrence.Class.Assignment_Identifier))
                 return dec_node;
-
-            dec_node.append_child(new TerminalTreeNode("Identifier", _tokens[currentToken]));
-            currentToken++; 
+            while (_tokens[currentToken].Type == Refrence.Class.Assignment_Identifier)
+            {
+                dec_node.append_child(new TerminalTreeNode("Identifier", _tokens[currentToken]));
+                currentToken++;
+                if (_tokens[currentToken].Type == Refrence.Class.Comma)
+                {
+                    currentToken++;
+                }
+            }
 
             return dec_node;
+        }
+
+        private TreeNode function_call()
+        {
+            currentToken--;
+            NonTerminalTreeNode fnHeader = new NonTerminalTreeNode("Function Call");
+            if (match(Refrence.Class.Assignment_Identifier))
+                fnHeader.append_child(new TerminalTreeNode("Function Name", _tokens[currentToken]));
+            currentToken++;
+            match(Refrence.Class.LeftBracket);
+            currentToken++;
+            NonTerminalTreeNode Attributes = new NonTerminalTreeNode("Parameters");
+            int parameterCount = 1;
+            while (_tokens[currentToken].Type != Refrence.Class.RightBracket)
+            {
+                Attributes.append_child(new TerminalTreeNode("Parameter# " + parameterCount.ToString(), _tokens[currentToken]));
+                currentToken++;
+                if (_tokens[currentToken].Type == Refrence.Class.RightBracket || !match(Refrence.Class.Comma))
+                {
+                    break;
+                }
+                currentToken++;
+            }
+            fnHeader.append_child(Attributes);
+            currentToken++;
+            return fnHeader;
         }
 
         private TreeNode function_sig()
@@ -141,23 +174,28 @@ namespace Tytanium.Parser
             currentToken--;
             NonTerminalTreeNode fnHeader = new NonTerminalTreeNode("Function signature");
             if (match(Refrence.Class.Assignment_Identifier))
-                fnHeader.append_child(new TerminalTreeNode("Function Nsmr", _tokens[currentToken]));
+                fnHeader.append_child(new TerminalTreeNode("Function Name", _tokens[currentToken]));
             currentToken++;
-            while (true)
+            match(Refrence.Class.LeftBracket);
+            currentToken++;
+            NonTerminalTreeNode Attributes = new NonTerminalTreeNode("Attributes");
+            while (_tokens[currentToken].Type != Refrence.Class.RightBracket)
             {
-                fnHeader.append_child(declaration_stmt());
-
+                Attributes.append_child(declaration_stmt());
                 if (_tokens[currentToken].Type == Refrence.Class.RightBracket || !match(Refrence.Class.Comma))
                 {
                     break;
                 }
+                currentToken++;
             }
+            fnHeader.append_child(Attributes);
             currentToken++;
             return fnHeader;
         }
 
         private TreeNode function_body()
         {
+            Parsers[Refrence.Class.LeftBracket] = function_call;
             NonTerminalTreeNode fnBody = new NonTerminalTreeNode("Function body");
             currentToken++;
 
@@ -185,6 +223,7 @@ namespace Tytanium.Parser
                     fnBody.append_child(child);
                 }
             }
+            Parsers[Refrence.Class.LeftBracket] = function_sig;
             return fnBody;
 
         }
@@ -192,7 +231,7 @@ namespace Tytanium.Parser
         public Tree parse()
         {
             if (_tokens == null) return null;
-            if (_tokens.Count == 0)  return new Tree(null);
+            if (_tokens.Count == 0) return new Tree(null);
             currentToken = 0;
             return new Tree(program());
         }
@@ -217,7 +256,7 @@ namespace Tytanium.Parser
         {
             NonTerminalTreeNode root = new NonTerminalTreeNode("If statement");
             match(Refrence.Class.BranchingAgent_if);
-            root.append_child(new TerminalTreeNode("If Intiator",_tokens[currentToken]));
+            root.append_child(new TerminalTreeNode("If Intiator", _tokens[currentToken]));
             currentToken++;
             root.append_child(exp());
             match(Refrence.Class.BranchingAgent_then);
@@ -226,15 +265,21 @@ namespace Tytanium.Parser
             NonTerminalTreeNode seQ = new NonTerminalTreeNode("If Body");
             while (_tokens[currentToken].Type != Refrence.Class.BranchingAgent_end)
             {
-                if (_tokens[currentToken].Type == Refrence.Class.BranchingAgent_elseIf)
+                if (_tokens[currentToken].Type == Refrence.Class.BranchingAgent_elseif)
                 {
-                    if (ElsesCount==0)
+                    if (ElsesCount == 0)
                     {
-                        Errors.Add(new Error("An ElseIf Scope can not be opened following an else scope",Error.ErrorType.ParserError));
+                        Errors.Add(new Error("An ElseIf Scope can not be opened following an else scope", Error.ErrorType.ParserError));
                     }
                     currentToken++;
                     root.append_child(seQ);
-                    seQ = new NonTerminalTreeNode("Else If#" + ElsesCount++.ToString() +  "Body");
+                    seQ = new NonTerminalTreeNode("Else If#" + ElsesCount++.ToString());
+                    NonTerminalTreeNode ConditionNode = new NonTerminalTreeNode("Condition");
+                    ConditionNode.append_child(exp());
+                    seQ.append_child(ConditionNode);
+                    match(Refrence.Class.BranchingAgent_then);
+                    seQ.append_child(new TerminalTreeNode("Keyword:", _tokens[currentToken]));
+                    currentToken++;
                 }
 
                 if (_tokens[currentToken].Type == Refrence.Class.BranchingAgent_else)
@@ -263,23 +308,23 @@ namespace Tytanium.Parser
             currentToken++;
             NonTerminalTreeNode seQ = new NonTerminalTreeNode("Body");
 
-            while (_tokens[currentToken].Type!=Refrence.Class.LoopBound_until)
+            while (_tokens[currentToken].Type != Refrence.Class.LoopBound_until)
             {
                 seQ.append_child(statement());
             }
 
-            root.append_child(seQ);
-
             match(Refrence.Class.LoopBound_until);
             currentToken++;
             root.append_child(exp());
-            return root; 
+            root.append_child(seQ);
+            return root;
         }
 
         private TreeNode write_stmt()
         {
-            NonTerminalTreeNode root = new NonTerminalTreeNode("Write");
+            NonTerminalTreeNode root = new NonTerminalTreeNode("Write Statment");
             match(Refrence.Class.Directive_write);
+            root.append_child(new TerminalTreeNode(("Write Directive"), _tokens[currentToken]));
             currentToken++;
             root.append_child(exp());
             return root;
@@ -287,8 +332,9 @@ namespace Tytanium.Parser
 
         private TreeNode read_stmt()
         {
-            NonTerminalTreeNode root = new NonTerminalTreeNode("Read");
+            NonTerminalTreeNode root = new NonTerminalTreeNode("Read Statment");
             match(Refrence.Class.Directive_read);
+            root.append_child(new TerminalTreeNode("Read Directive", _tokens[currentToken]));
             currentToken++;
             root.append_child(exp());
             return root;
@@ -314,10 +360,12 @@ namespace Tytanium.Parser
         {
             NonTerminalTreeNode root = new NonTerminalTreeNode("Expression");
             root.append_child(simple_exp());
-            if (currentToken < _tokens.Count && (_tokens[currentToken].Type == Refrence.Class.ComparisonOperatorLessThan ||
+            while (currentToken < _tokens.Count && (_tokens[currentToken].Type == Refrence.Class.ComparisonOperatorLessThan ||
                 _tokens[currentToken].Type == Refrence.Class.ComparisonOperatorEQ ||
                 _tokens[currentToken].Type == Refrence.Class.ComparisonOperatorGreaterThan ||
-                _tokens[currentToken].Type == Refrence.Class.ComparisonOperatorNQ))
+                _tokens[currentToken].Type == Refrence.Class.ComparisonOperatorNQ) ||
+                _tokens[currentToken].Type == Refrence.Class.LogicOperatorAND ||
+                _tokens[currentToken].Type == Refrence.Class.LogicOperatorOR)
             {
                 root.append_child(new TerminalTreeNode("Operator", _tokens[currentToken]));
                 match(_tokens[currentToken].Type);
@@ -389,6 +437,14 @@ namespace Tytanium.Parser
         private TreeNode factor()
         {
             TreeNode root = null;
+
+            if (Macros.Contains(_tokens[currentToken].Type))
+            {
+                root = new TerminalTreeNode("Constant", _tokens[currentToken]);
+                currentToken++;
+                return root;
+            }
+
             switch (_tokens[currentToken].Type)
             {
                 case Refrence.Class.DataType_int:
