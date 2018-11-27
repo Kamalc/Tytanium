@@ -1,5 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Handler;
 
 namespace Tytanium.Scanner
@@ -11,9 +15,9 @@ namespace Tytanium.Scanner
         const string OperatorInvalid = "usage of operator %LITERAL% is unrecognized! in line %LINE%";
         const string TokenInvalid = "usage of invalid token at line %LINE%";
 
-        private int curLine = 1;
+        int curLine = 1;
 
-        public List<Error> ErrorList = new List<Error>(); 
+        public List<Error> ErrorList = new List<Error>();
 
         public List<Token> Tokens = new List<Token>();
 
@@ -24,9 +28,9 @@ namespace Tytanium.Scanner
         List<char> Numerics = new List<char>();
         List<char> Alphabet = new List<char>();
 
-        int ScannerLocation;
+        int ScannerLocation = 0;
         string SubjectText;
-        
+
         bool isWS()
         {
             if (SubjectText[ScannerLocation] == ' ' || SubjectText[ScannerLocation] == '\n' || SubjectText[ScannerLocation] == '\t')
@@ -56,7 +60,7 @@ namespace Tytanium.Scanner
 
             Scanners.Add("_", Literal);
 
-            for (char c='A';c<='Z';c++)
+            for (char c = 'A'; c <= 'Z'; c++)
             {
                 Alphabet.Add(c);
                 Scanners.Add(c.ToString(), Literal);
@@ -97,14 +101,14 @@ namespace Tytanium.Scanner
         void Literal()
         {
             string buffer = "";
-            while (!isWS() && Alphabet.Contains(SubjectText[ScannerLocation]) || Numerics.Contains(SubjectText[ScannerLocation]) && ScannerLocation<SubjectText.Length)
+            while (!isWS() && Alphabet.Contains(SubjectText[ScannerLocation]) || Numerics.Contains(SubjectText[ScannerLocation]) && ScannerLocation < SubjectText.Length)
             {
                 buffer += SubjectText[ScannerLocation++];
             }
-
-            Tokens.Add(Refrence.RefrenceTable.Keys.Contains(buffer)
-                ? new Token(buffer, Refrence.UpperClass.ReservedWord, Refrence.RefrenceTable[buffer])
-                : new Token(buffer, Refrence.UpperClass.Identifier, Refrence.Class.Assignment_Identifier));
+            if (Refrence.RefrenceTable.Keys.Contains(buffer))
+                Tokens.Add(new Token(buffer, Refrence.UpperClass.ReservedWord, Refrence.RefrenceTable[buffer]));
+            else
+                Tokens.Add(new Token(buffer, Refrence.UpperClass.Identifier, Refrence.Class.Assignment_Identifier));
         }
 
         void Comment()
@@ -113,21 +117,21 @@ namespace Tytanium.Scanner
             while (ScannerLocation < SubjectText.Length)
             {
                 //ERROR DETECTION BRANCH
-                if (ScannerLocation>=SubjectText.Length)
+                if (ScannerLocation >= SubjectText.Length)
                 {
-                    ErrorList.Add(new Error(EndOFFile.Replace("%ITEM%","Comment Itiator").Replace("%LINE%", curLine.ToString()) , Error.ErrorType.ScannerError));
+                    ErrorList.Add(new Error(EndOFFile.Replace("%ITEM%", "Comment Itiator").Replace("%LINE%", curLine.ToString()), Error.ErrorType.ScannerError));
                 }
 
-                if (SubjectText[ScannerLocation]=='*' && ScannerLocation<SubjectText.Length-2 && SubjectText[ScannerLocation+1]=='/'&&buffer.Length>2)
+                if (SubjectText[ScannerLocation] == '*' && ScannerLocation < SubjectText.Length - 2 && SubjectText[ScannerLocation + 1] == '/' && buffer.Length > 2)
                 {
                     buffer += "*/";
-                    ScannerLocation += 1;
+                    ScannerLocation += 2;
                     break;
                 }
                 buffer += SubjectText[ScannerLocation++];
 
             }
-            // Tokens.Add(new Token(buffer, Refrence.UpperClass.Comment));
+            Tokens.Add(new Token(buffer, Refrence.UpperClass.Comment));
         }
 
         void String()
@@ -140,7 +144,7 @@ namespace Tytanium.Scanner
 
 
                 buffer += SubjectText[ScannerLocation];
-                if (SubjectText[ScannerLocation]=='\"')
+                if (SubjectText[ScannerLocation] == '\"')
                 {
                     ScannerLocation++;
                     break;
@@ -157,7 +161,7 @@ namespace Tytanium.Scanner
 
             }
 
-            Tokens.Add(new Token(buffer, Refrence.UpperClass.Constant,Refrence.Class.DataType_string));
+            Tokens.Add(new Token(buffer, Refrence.UpperClass.Constant, Refrence.Class.DataType_string));
         }
 
         void Numeric()
@@ -186,20 +190,23 @@ namespace Tytanium.Scanner
 
             if (!Refrence.OperatorLookup.ContainsValue(SubjectText[ScannerLocation].ToString()) && !isWS() && SubjectText[ScannerLocation] != ';')
             {
-                ErrorList.Add(new Error(FormatError.Replace("%TYPE%", "\""+ buffer + SubjectText[ScannerLocation] + "\"").Replace("%CHAR%", curLine.ToString()).Replace("%REASON%", "Invalid Numeric Value"), Error.ErrorType.ScannerError));
+                ErrorList.Add(new Error(FormatError.Replace("%TYPE%", "\"" + buffer + SubjectText[ScannerLocation] + "\"").Replace("%CHAR%", curLine.ToString()).Replace("%REASON%", "Invalid Numeric Value"), Error.ErrorType.ScannerError));
             }
 
-            Tokens.Add(floated
-                ? new Token(buffer, Refrence.UpperClass.Constant, Refrence.Class.DataType_float)
-                : new Token(buffer, Refrence.UpperClass.Constant, Refrence.Class.DataType_int));
+            if (floated)
+                Tokens.Add(new Token(buffer, Refrence.UpperClass.Constant, Refrence.Class.DataType_float));
+            else
+                Tokens.Add(new Token(buffer, Refrence.UpperClass.Constant, Refrence.Class.DataType_int));
+
         }
 
         void Operator()
         {
-            string buffer = ""+SubjectText[ScannerLocation];
-            int maxLength=int.MinValue;
+            string buffer = "" + SubjectText[ScannerLocation];
+            int maxLength = int.MinValue;
 
-            List<string> Possiblities = new List<string> {buffer};
+            List<string> Possiblities = new List<string>();
+            Possiblities.Add(buffer);
 
             foreach (string s in Refrence.OperatorLookup.Values)
             {
@@ -207,7 +214,7 @@ namespace Tytanium.Scanner
                     maxLength = s.Length;
             }
 
-            for (int i=1;i<maxLength && ScannerLocation+1<SubjectText.Length;i++)
+            for (int i = 1; i < maxLength && ScannerLocation + 1 < SubjectText.Length; i++)
             {
                 buffer += SubjectText[ScannerLocation + i];
                 Possiblities.Add(buffer);
@@ -224,12 +231,12 @@ namespace Tytanium.Scanner
                     return;
                 }
             }
-            ErrorList.Add(new Error(OperatorInvalid.Replace("LITERAL", Possiblities.First()).Replace("%LINE%",curLine.ToString()), Error.ErrorType.ScannerError));
+            ErrorList.Add(new Error(OperatorInvalid.Replace("LITERAL", Possiblities.First()).Replace("%LINE%", curLine.ToString()), Error.ErrorType.ScannerError));
         }
 
         public void Scan()
         {
-            for (;ScannerLocation<SubjectText.Length;)
+            for (; ScannerLocation < SubjectText.Length;)
             {
                 SkipWS();
                 if (ScannerLocation >= SubjectText.Length)
@@ -237,7 +244,8 @@ namespace Tytanium.Scanner
 
                 string buffer = "" + SubjectText[ScannerLocation];
 
-                List<string> Possiblities = new List<string> {buffer};
+                List<string> Possiblities = new List<string>();
+                Possiblities.Add(buffer);
 
                 for (int i = 1; i < ScannerMaxLength && ScannerLocation + 1 < SubjectText.Length; i++)
                 {
@@ -260,10 +268,10 @@ namespace Tytanium.Scanner
                 }
                 if (!completed)
                 {
-                    ErrorList.Add(new Error(TokenInvalid.Replace("%LINE%", curLine.ToString()),Error.ErrorType.ScannerError));
+                    ErrorList.Add(new Error(TokenInvalid.Replace("%LINE%", curLine.ToString()), Error.ErrorType.ScannerError));
                     ScannerLocation++;
                 }
-                
+
             }
         }
     }

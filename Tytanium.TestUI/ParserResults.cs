@@ -48,23 +48,23 @@ namespace Tytanium
 
         private void ConstructTreeImage()
         {
-            string inputFilename = "tree" + DateTime.Now.Year + "-" + DateTime.Now.Month + "-" + DateTime.Now.Day + ".dot";
-            string dotOutput = Tree.print_dot();
-            File.WriteAllText(inputFilename, dotOutput);
-            string outputFilename = inputFilename + ".png";
-            Process p = new Process
-            {
-                StartInfo =
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = false,
-                    FileName = @"D:\Program Files (x86)\Graphviz2.38\bin\dot.exe",
-                    Arguments = "-Tpng -O " + inputFilename
-                }
-            };
-            p.Start();
-            p.WaitForExit();
-            ParserTreeImage.Image = new Bitmap(outputFilename);
+            //string inputFilename = "tree" + DateTime.Now.Year + "-" + DateTime.Now.Month + "-" + DateTime.Now.Day + ".dot";
+            //string dotOutput = Tree.print_dot();
+            //File.WriteAllText(inputFilename, dotOutput);
+            //string outputFilename = inputFilename + ".png";
+            //Process p = new Process
+            //{
+            //    StartInfo =
+            //    {
+            //        UseShellExecute = false,
+            //        RedirectStandardOutput = false,
+            //        FileName = @"D:\Program Files (x86)\Graphviz2.38\bin\dot.exe",
+            //        Arguments = "-Tpng -O " + inputFilename
+            //    }
+            //};
+            //p.Start();
+            //p.WaitForExit();
+            //ParserTreeImage.Image = new Bitmap(outputFilename);
         }
     }
 }
