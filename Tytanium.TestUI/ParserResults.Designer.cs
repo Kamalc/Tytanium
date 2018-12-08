@@ -37,7 +37,7 @@
             this.ParserTreeView.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ParserTreeView.Location = new System.Drawing.Point(0, 0);
             this.ParserTreeView.Name = "ParserTreeView";
-            this.ParserTreeView.Size = new System.Drawing.Size(704, 321);
+            this.ParserTreeView.Size = new System.Drawing.Size(514, 461);
             this.ParserTreeView.TabIndex = 1;
             // 
             // ParserResults
@@ -45,7 +45,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(704, 321);
+            this.ClientSize = new System.Drawing.Size(514, 461);
             this.Controls.Add(this.ParserTreeView);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));

@@ -3,13 +3,17 @@ using Tytanium.Scanner;
 
 namespace Tytanium.Parser
 {
+
+
+
     public abstract class TreeNode
     {
+        public Dictionary<Registrar.Attribute, object> Attributes = new Dictionary<Registrar.Attribute, object>();
+
+
         protected string label;
 
         public abstract string getLabel();
-
-        public abstract string  print_dot(int id, ref int maxId);
 
         public bool Composite=false;
     }
@@ -27,18 +31,6 @@ namespace Tytanium.Parser
         }
 
         public readonly List<TreeNode> Children = new List<TreeNode>();
-
-        public override string print_dot(int id, ref int maxId)
-        {
-            string res = "\tNode" + id + "[label=\"" + getLabel() + "\"];\n";
-            foreach(var child in Children)
-            {
-                int childId = ++maxId;
-                res += child.print_dot(childId, ref maxId);
-                res += "\tNode" + id + " -> Node" + childId + "[dir=none];\n";
-            }
-            return res;
-        }
 
         public override string getLabel()
         {
@@ -65,14 +57,14 @@ namespace Tytanium.Parser
             Token = token;
         }
 
+        public string getLiteral()
+        {
+            return Token.Literal;
+        }
+
         public override string getLabel()
         {
             return label + " : " + Token.Literal;
-        }
-
-        public override string print_dot(int id, ref int maxId)
-        {
-            return "\tNode" + id + "[label=\"" + getLabel() +  "\"];\n";
         }
     }
 
@@ -83,18 +75,6 @@ namespace Tytanium.Parser
         public Tree(TreeNode root)
         {
             Root = root;
-        }
-
-        public string print_dot()
-        {
-            string res = "digraph G {\n\tnode[shape=plaintext];\n" ;
-            if (Root != null)
-            {
-                int maxid = 0;
-                res += Root.print_dot(0, ref maxid);
-            }
-            res += "}\n";
-            return res;
         }
 
     }
