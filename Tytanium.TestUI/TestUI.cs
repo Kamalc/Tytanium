@@ -6,7 +6,6 @@ using Tytanium.Parser;
 
 namespace Tytanium
 {
-
     public enum ScrollBarType : uint
     {
         SbHorz = 0,
@@ -52,7 +51,7 @@ namespace Tytanium
         private void TestUI_Load(object sender, EventArgs e)
         {
             this.Location = new Point(50, 100);
-
+            CodeBox1.Text = System.IO.File.ReadAllText("Testcase.txt", System.Text.Encoding.Unicode);
             for (int i=1;i<=200;i++)
             {
                 LineNoBox.Text += i + "\n";
@@ -108,6 +107,11 @@ namespace Tytanium
             if (parser.ErrorList.Count > 0)
             {
                 ErrorList EL = new ErrorList(parser.ErrorList);
+                EL.Show();
+            }
+            if (parser.Inconsisties.Count!=0)
+            {
+                ErrorList EL = new ErrorList(parser.Inconsisties);
                 EL.Show();
             }
         }

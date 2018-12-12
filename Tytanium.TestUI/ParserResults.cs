@@ -37,7 +37,7 @@ namespace Tytanium
 
         private System.Windows.Forms.TreeNode CreateTreeViewNode(TreeNode node)
         {
-            if (node==null)
+            if (node == null)
             {
                 return new System.Windows.Forms.TreeNode("Parser Error");
             }
@@ -46,21 +46,21 @@ namespace Tytanium
 
             bool empty = true;
 
-            if (node.Attributes.ContainsKey(Registrar.Attribute.Value))
+            if (node.Attributes.ContainsKey(Parser.Attribute.Value))
             {
                 empty = false;
                 string Temp = "";
-                foreach (var i in ((List<string>)node.Attributes[Registrar.Attribute.Value]))
+                foreach (var i in ((List<string>)node.Attributes[Parser.Attribute.Value]))
                 {
                     Temp += i + " ";
                 }
                 attribs.Nodes.Add(Temp);
             }
 
-            if (node.Attributes.ContainsKey(Registrar.Attribute.Datatype))
+            if (node.Attributes.ContainsKey(Parser.Attribute.Datatype))
             {
                 empty = false;
-                attribs.Nodes.Add(((Registrar.Datatype)node.Attributes[Registrar.Attribute.Datatype]).ToString());
+                attribs.Nodes.Add(((Datatype)node.Attributes[Parser.Attribute.Datatype]).ToString());
             }
 
             if (!empty)
@@ -68,14 +68,12 @@ namespace Tytanium
                 res.Nodes.Add(attribs);
             }
 
-            if (node is NonTerminalTreeNode)
+
+            foreach (var child in node.Children)
             {
-                var nonTerminalNode = node as NonTerminalTreeNode;
-                foreach (var child in nonTerminalNode.Children)
-                {
-                    res.Nodes.Add(CreateTreeViewNode(child));
-                }
+                res.Nodes.Add(CreateTreeViewNode(child));
             }
+
             return res;
         }
     }

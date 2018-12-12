@@ -8,9 +8,17 @@ namespace Tytanium.Parser
 {
     public class Parser
     {
-        Registrar Rx = new Registrar();
+        public Tree ParseTree = new Tree();
 
-        delegate TreeNode ParserFn(); //Parser Delegation
+        public List<Error> Inconsisties
+        {
+            get
+            {
+                return ParseTree.Inconsisities;
+            }
+        }
+
+        delegate TreeNode ParserFn(TreeNode Parent); //Parser Delegation
 
         Dictionary<Refrence.Class, ParserFn> Parsers = new Dictionary<Refrence.Class, ParserFn>();
 
@@ -55,23 +63,21 @@ namespace Tytanium.Parser
                 {Refrence.Class.Assignment_Identifier, identifier_call },
                 {Refrence.Class.AssignmentOperator,assign_stmt },
                 {Refrence.Class.LeftBracket,function_sig },
-                {Refrence.Class.LeftCurlyBrace,function_body },
+                //{Refrence.Class.LeftCurlyBrace,function_body },
             };
         }
 
         //Invoked in case of identifier intiating statment variable := or variable(.)...etc
         //May be used in operator overloading and dot operator functions
         //Applications are limitless
-        private TreeNode identifier_call() 
+        private TreeNode identifier_call(TreeNode Parent) 
         {
-            NonTerminalTreeNode identifierNode = new NonTerminalTreeNode("Runtime Statment");
-            identifierNode.append_child(new TerminalTreeNode("Calling Identifier", _tokens[currentToken]));
-            
-            //Attributes Registerar
-            identifierNode.Children[0].Attributes[Registrar.Attribute.Datatype] = Rx.Variables[_tokens[currentToken].Literal];
-
+            TreeNode identifierNode = new TreeNode("Runtime Statment",NodeClass.RuntimeCall);
+            Parent.AssociateNode(identifierNode);
+            identifierNode.append_child(new TreeNode("Calling Identifier", _tokens[currentToken]));
             currentToken++;
-            identifierNode.append_child(statement());
+
+            identifierNode.append_child(statement(identifierNode));
 
             identifierNode.Composite = true;
             return identifierNode;
@@ -81,21 +87,23 @@ namespace Tytanium.Parser
         //Recursion intiator function
         private TreeNode program()
         {
-            NonTerminalTreeNode prog_root = new NonTerminalTreeNode("Program Syntatic structure");
+            TreeNode prog_root = new TreeNode("Program Syntatic structure",NodeClass.Scope);
+            ParseTree.AssociateRoot(prog_root);
             while (currentToken < _tokens.Count)
             {
-                prog_root.append_child(stmt_sequence());
+                prog_root.append_child(stmt_sequence(prog_root));
             }
             return prog_root;
         }
 
-        private TreeNode stmt_sequence()
+        private TreeNode stmt_sequence(TreeNode Parent)
         {
-            NonTerminalTreeNode seq_root = new NonTerminalTreeNode("Statements sequence");
+            TreeNode seq_root = new TreeNode("Statements sequence",NodeClass.Scope);
+            Parent.AssociateNode(seq_root);
 
             while (currentToken != _tokens.Count)
             {
-                TreeNode child = statement();
+                TreeNode child = statement(seq_root);
                 if (child != null)
                 {
                     seq_root.append_child(child);
@@ -106,24 +114,24 @@ namespace Tytanium.Parser
         }
 
         //Linear statment parsing
-        private TreeNode statement()
+        private TreeNode statement(TreeNode Parent)
         {
-            TreeNode root = new NonTerminalTreeNode("Statement");
+            TreeNode root = null;
 
             if (currentToken == _tokens.Count)
                 return null;
 
             //Comment Ad-Hoc model, will be removed in V2.0
-            if (_tokens[currentToken].UpperType == Refrence.UpperClass.Comment)
+            else if (_tokens[currentToken].UpperType == Refrence.UpperClass.Comment)
             {
-                TerminalTreeNode Nodex = new TerminalTreeNode("Comment", _tokens[currentToken]);
+                root = new TreeNode("Comment", _tokens[currentToken]);
                 currentToken++;
-                return Nodex;
+                return root;
             }
 
-            if (Parsers.Keys.Contains(_tokens[currentToken].Type))
+            else if (Parsers.Keys.Contains(_tokens[currentToken].Type))
             {
-                root = Parsers[_tokens[currentToken].Type](); //Calling parser function
+                root = Parsers[_tokens[currentToken].Type](Parent); //Calling parser function
             }
             else
             {
@@ -145,21 +153,21 @@ namespace Tytanium.Parser
         }
 
         //Supports multiple declarations via the loop below
-        private TreeNode declaration_stmt()
+        private TreeNode declaration_stmt(TreeNode Parent)
         {
-            NonTerminalTreeNode dec_node = new NonTerminalTreeNode("Declaration Statment");
-            dec_node.append_child(new TerminalTreeNode("Datatype", _tokens[currentToken]));
-            dec_node.Attributes[Registrar.Attribute.Datatype] = (Registrar.Attribute) _tokens[currentToken].Type - 2;
+            TreeNode dec_node = new TreeNode("Declaration Statment",NodeClass.Declaration);
+            Parent.AssociateNode(dec_node);
+            dec_node.append_child(new TreeNode("Datatype", _tokens[currentToken]));
             currentToken++;
             if (!match(Refrence.Class.Assignment_Identifier))
                 return dec_node;
             while (_tokens[currentToken].Type == Refrence.Class.Assignment_Identifier)
             {
-                dec_node.append_child(new TerminalTreeNode("Identifier", _tokens[currentToken]));
+                dec_node.append_child(new TreeNode("Identifier", _tokens[currentToken]));
                 currentToken++;
                 if (_tokens[currentToken].Type==Refrence.Class.AssignmentOperator)
                 {
-                    dec_node.append_child(assign_stmt());
+                    dec_node.append_child(assign_stmt(dec_node));
                 }
                 if (_tokens[currentToken].Type != Refrence.Class.Comma)
                 {
@@ -176,27 +184,25 @@ namespace Tytanium.Parser
                 dec_node.Composite = true;
             }
 
-            Rx.Variables.Add(((TerminalTreeNode)dec_node.Children[1]).getLiteral(), 
-                (Registrar.Datatype)((TerminalTreeNode)dec_node.Children[1]).Token.Type - 1);
-
             return dec_node;
         }
 
         //Parses function calls with parameters
-        private TreeNode function_call()
+        private TreeNode function_call(TreeNode Parent)
         {
             currentToken--;
-            NonTerminalTreeNode fnHeader = new NonTerminalTreeNode("Function Call");
+            TreeNode fnHeader = new TreeNode("Function Call",NodeClass.FunctionCall);
+            Parent.AssociateNode(fnHeader);
             if (match(Refrence.Class.Assignment_Identifier))
-                fnHeader.append_child(new TerminalTreeNode("Function Name", _tokens[currentToken]));
+                fnHeader.append_child(new TreeNode("Function Name", _tokens[currentToken]));
             currentToken++;
             match(Refrence.Class.LeftBracket);
             currentToken++;
-            NonTerminalTreeNode Attributes = new NonTerminalTreeNode("Parameters");
+            //TreeNode Attributes = new TreeNode("Parameters",NodeClass.Scope);
             int parameterCount = 1;
             while (_tokens[currentToken].Type != Refrence.Class.RightBracket)
             {
-                Attributes.append_child(new TerminalTreeNode("Parameter# " + parameterCount.ToString(), _tokens[currentToken]));
+                fnHeader.append_child(new TreeNode("Parameter# " + parameterCount.ToString(), _tokens[currentToken]));
                 currentToken++;
                 if (_tokens[currentToken].Type == Refrence.Class.RightBracket || !match(Refrence.Class.Comma))
                 {
@@ -205,32 +211,31 @@ namespace Tytanium.Parser
                 parameterCount++;
                 currentToken++;
             }
-            fnHeader.append_child(Attributes);
             currentToken++;
             return fnHeader;
         }
 
         //Parses the 2nd half of the function declaration Function Name (Attributes)
-        private TreeNode function_sig()
+        private TreeNode function_sig(TreeNode Parent)
         {
             currentToken--;
-            NonTerminalTreeNode fnHeader = new NonTerminalTreeNode("Function signature");
+            TreeNode fnHeader = new TreeNode("Function signature",NodeClass.Scope);
+            Parent.AssociateNode(fnHeader);
             if (match(Refrence.Class.Assignment_Identifier))
-                fnHeader.append_child(new TerminalTreeNode("Function Name", _tokens[currentToken]));
+                fnHeader.append_child(new TreeNode("Function Name", _tokens[currentToken]));
             currentToken++;
             match(Refrence.Class.LeftBracket);
             currentToken++;
-            NonTerminalTreeNode Attributes = new NonTerminalTreeNode("Attributes");
             int sigDec = 1;
             while (_tokens[currentToken].Type != Refrence.Class.RightBracket)
             {
-                NonTerminalTreeNode Tn = new NonTerminalTreeNode("Signature Declaration# " + sigDec++.ToString());
-                
+                TreeNode Tn = new TreeNode("Signature Declaration# " + sigDec++.ToString(),NodeClass.Declaration);
+                fnHeader.AssociateNode(Tn);
                 if (_tokens[currentToken].Type == Refrence.Class.DataType_int||
                     _tokens[currentToken].Type == Refrence.Class.DataType_float||
                     _tokens[currentToken].Type == Refrence.Class.DataType_string)
                 {
-                    Tn.append_child(new TerminalTreeNode("Datatype", _tokens[currentToken++]));
+                    Tn.append_child(new TreeNode("Datatype", _tokens[currentToken++]));
                 }
                 else
                 {
@@ -240,32 +245,34 @@ namespace Tytanium.Parser
 
                 if (_tokens[currentToken].Type == Refrence.Class.Assignment_Identifier)
                 {
-                    Tn.append_child(new TerminalTreeNode("Identifier", _tokens[currentToken++]));
+                    Tn.append_child(new TreeNode("Identifier", _tokens[currentToken++]));
                 }
                 else
                 {
                     ErrorList.Add(new Error("Unexpected lexeme in Line %LINE%, identifier expected".Replace("%LINE%", _tokens[currentToken].Line.ToString()), Error.ErrorType.ParserError));
                 }
-                Attributes.append_child(Tn);
+                fnHeader.append_child(Tn);
                 if (_tokens[currentToken].Type == Refrence.Class.RightBracket || !match(Refrence.Class.Comma))
                 {
                     break;
                 }
                 currentToken++;
             }
-            fnHeader.append_child(Attributes);
-            fnHeader.Composite = true;
             currentToken++;
+            fnHeader.append_child(function_body(fnHeader));
+            fnHeader.Composite = true;
+
             return fnHeader;
         }
 
         //Switches the parser to an in function mode
         //to avoid nesting functions (lambda may still be made though if intented)
         //can handle multiple returns
-        private TreeNode function_body()
+        private TreeNode function_body(TreeNode Parent)
         {
             Parsers[Refrence.Class.LeftBracket] = function_call;
-            NonTerminalTreeNode fnBody = new NonTerminalTreeNode("Function body");
+            TreeNode fnBody = new TreeNode("Function body",NodeClass.Scope);
+            Parent.AssociateNode(fnBody);
             currentToken++;
 
             while (currentToken != _tokens.Count)
@@ -277,16 +284,16 @@ namespace Tytanium.Parser
                 }
                 else if (_tokens[currentToken].Type == Refrence.Class.Directive_return)
                 {
-                    NonTerminalTreeNode returnCode = new NonTerminalTreeNode("Return Statment");
-                    returnCode.append_child(new TerminalTreeNode("return directive", _tokens[currentToken]));
+                    TreeNode returnCode = new TreeNode("Return Statment",NodeClass.Directive);
+                    returnCode.append_child(new TreeNode("return directive", _tokens[currentToken]));
                     currentToken++;
-                    returnCode.append_child(exp());
+                    returnCode.append_child(exp(returnCode));
                     match(Refrence.Class.SemiColon);
                     currentToken++;
                     continue;
                 }
 
-                TreeNode child = statement();
+                TreeNode child = statement(fnBody);
                 if (child != null)
                 {
                     fnBody.append_child(child);
@@ -303,7 +310,9 @@ namespace Tytanium.Parser
             if (_tokens == null) return null;
             if (_tokens.Count == 0) return new Tree(null);
             currentToken = 0;
-            return new Tree(program());
+            TreeNode Root = program();
+            ParseTree.Root = Root;
+            return ParseTree;
         }
 
         //Now doesn't change caret location
@@ -327,13 +336,14 @@ namespace Tytanium.Parser
 
         //Jigsaw if elseif^n else model
         //prevents a dual else or else if preceding else
-        private TreeNode if_stmt()
+        private TreeNode if_stmt(TreeNode Parent)
         {
-            NonTerminalTreeNode root = new NonTerminalTreeNode("If statement");
+            TreeNode root = new TreeNode("If statement",NodeClass.ifCondition);
+            Parent.AssociateNode(root);
             match(Refrence.Class.BranchingAgent_if);
-            root.append_child(new TerminalTreeNode("If Intiator", _tokens[currentToken]));
+            root.append_child(new TreeNode("If Intiator", _tokens[currentToken]));
             currentToken++;
-            root.append_child(exp());
+            root.append_child(exp(root));
             match(Refrence.Class.BranchingAgent_then);
             currentToken++;
             int ElsesCount = 1;
@@ -341,7 +351,8 @@ namespace Tytanium.Parser
             //append seQ and restart all over again in the new body
             //We keep track of our elses via Elses count
             //which in reality is an if body count
-            NonTerminalTreeNode seQ = new NonTerminalTreeNode("If Body");
+            TreeNode seQ = new TreeNode("If Body",NodeClass.Scope);
+            root.AssociateNode(seQ);
             while (_tokens[currentToken].Type != Refrence.Class.BranchingAgent_end)
             {
                 if (_tokens[currentToken].Type == Refrence.Class.BranchingAgent_elseif)
@@ -352,12 +363,12 @@ namespace Tytanium.Parser
                     }
                     currentToken++;
                     root.append_child(seQ);
-                    seQ = new NonTerminalTreeNode("Else If#" + ElsesCount++.ToString());
-                    NonTerminalTreeNode ConditionNode = new NonTerminalTreeNode("Condition");
-                    ConditionNode.append_child(exp());
+                    seQ = new TreeNode("Else If#" + ElsesCount++.ToString(),NodeClass.Scope);
+                    TreeNode ConditionNode = new TreeNode("Condition",NodeClass.Scope);
+                    ConditionNode.append_child(exp(ConditionNode));
                     seQ.append_child(ConditionNode);
                     match(Refrence.Class.BranchingAgent_then);
-                    seQ.append_child(new TerminalTreeNode("Keyword:", _tokens[currentToken]));
+                    seQ.append_child(new TreeNode("Keyword:", _tokens[currentToken]));
                     currentToken++;
                 }
 
@@ -370,10 +381,10 @@ namespace Tytanium.Parser
                     ElsesCount = 0;
                     currentToken++;
                     root.append_child(seQ);
-                    seQ = new NonTerminalTreeNode("Else Body");
+                    seQ = new TreeNode("Else Body",NodeClass.Scope);
                 }
                 //All the branching above sets the seQ for this linear statment to append statments from tokens
-                seQ.append_child(statement());
+                seQ.append_child(statement(seQ));
             }
             root.append_child(seQ);
             match(Refrence.Class.BranchingAgent_end);
@@ -383,70 +394,65 @@ namespace Tytanium.Parser
         }
 
         //Repeat bounds parser
-        private TreeNode repeat_stmt()
+        private TreeNode repeat_stmt(TreeNode Parent)
         {
-            NonTerminalTreeNode root = new NonTerminalTreeNode("Loop (Repeat)");
+            TreeNode root = new TreeNode("Loop (Repeat)",NodeClass.LoopBound);
+            Parent.AssociateNode(root);
             match(Refrence.Class.LoopBound_repeat);
             currentToken++;
-            NonTerminalTreeNode seQ = new NonTerminalTreeNode("Body");
-
+            TreeNode seQ = new TreeNode("Body",NodeClass.Scope);
+            root.AssociateNode(seQ);
             while (_tokens[currentToken].Type != Refrence.Class.LoopBound_until)
             {
-                seQ.append_child(statement());
+                seQ.append_child(statement(seQ));
             }
-
             match(Refrence.Class.LoopBound_until);
             currentToken++;
-            root.append_child(exp());
+            root.append_child(exp(root));
             root.append_child(seQ);
             root.Composite = true;
             return root;
         }
 
-        private TreeNode write_stmt()
+        private TreeNode write_stmt(TreeNode Parent)
         {
-            NonTerminalTreeNode root = new NonTerminalTreeNode("Write Statment");
+            TreeNode root = new TreeNode("Write Statment",NodeClass.Directive);
+            Parent.AssociateNode(root);
             match(Refrence.Class.Directive_write);
-            root.append_child(new TerminalTreeNode(("Write Directive"), _tokens[currentToken]));
+            root.append_child(new TreeNode(("Write Directive"), _tokens[currentToken]));
             currentToken++;
-            root.append_child(exp());
+            root.append_child(exp(root));
             return root;
         }
 
-        private TreeNode read_stmt()
+        private TreeNode read_stmt(TreeNode Parent)
         {
-            NonTerminalTreeNode root = new NonTerminalTreeNode("Read Statment");
+            TreeNode root = new TreeNode("Read Statment",NodeClass.Directive);
+            Parent.AssociateNode(root);
             match(Refrence.Class.Directive_read);
-            root.append_child(new TerminalTreeNode("Read Directive", _tokens[currentToken]));
+            root.append_child(new TreeNode("Read Directive", _tokens[currentToken]));
             currentToken++;
-            root.append_child(exp());
+            root.append_child(exp(root));
             return root;
         }
 
-        private TreeNode assign_stmt()
+        private TreeNode assign_stmt(TreeNode Parent)
         {
-            currentToken--; //assign stmt is invoked by := therefore we must backtrack to find
-                            //the target of assignment
-            NonTerminalTreeNode root = new NonTerminalTreeNode("Assign");
-            if (_tokens[currentToken].Type == Refrence.Class.Assignment_Identifier)
-            {
-                root.append_child(new TerminalTreeNode("Identifier", _tokens[currentToken]));
-                match(Refrence.Class.Assignment_Identifier);
-                currentToken++;
-            }
+            TreeNode root = new TreeNode("Assign",NodeClass.Assignment);
+            Parent.AssociateNode(root);
+
             match(Refrence.Class.AssignmentOperator);
             currentToken++;
-            root.append_child(exp());
+
+            root.append_child(exp(root));
             return root;
         }
 
-        private TreeNode exp()
+        private TreeNode exp(TreeNode Parent)
         {
-            NonTerminalTreeNode root = new NonTerminalTreeNode("Expression");
-            root.append_child(simple_exp());
-            root.Attributes[Registrar.Attribute.Value] = (List<string>)root.Children.Last().Attributes[Registrar.Attribute.Value];
-            root.Attributes[Registrar.Attribute.Datatype] =
-                  (Registrar.Datatype)root.Children.Last().Attributes[Registrar.Attribute.Datatype];
+            TreeNode root = new TreeNode("Expression",NodeClass.Expression);
+            Parent.AssociateNode(root);
+            root.append_child(simple_exp(root));
             while (currentToken < _tokens.Count && (_tokens[currentToken].Type == Refrence.Class.ComparisonOperatorLessThan ||
                 _tokens[currentToken].Type == Refrence.Class.ComparisonOperatorEQ ||
                 _tokens[currentToken].Type == Refrence.Class.ComparisonOperatorGreaterThan ||
@@ -454,190 +460,110 @@ namespace Tytanium.Parser
                 _tokens[currentToken].Type == Refrence.Class.LogicOperatorAND ||
                 _tokens[currentToken].Type == Refrence.Class.LogicOperatorOR)
             {
-                root.append_child(new TerminalTreeNode("Operator", _tokens[currentToken]));
+                root.append_child(new TreeNode("Operator", _tokens[currentToken]));
                 match(_tokens[currentToken].Type);
                 currentToken++;
-                root.append_child(simple_exp());
-
-                if ((Registrar.Datatype)root.Children.Last().Attributes[Registrar.Attribute.Datatype] != (Registrar.Datatype)root.Attributes[Registrar.Attribute.Datatype])
-                {
-                    ErrorList.Add(new Error("Datatype mismatch at %LINE%, unable to calculate"
-                        .Replace("%LINE%", _tokens[currentToken].Line.ToString()), Error.ErrorType.Inconsistency));
-                }
-
-                ((List<string>)root.Attributes[Registrar.Attribute.Value])
-                    .AddRange((List<string>)root.Children.Last().Attributes[Registrar.Attribute.Value]);
-                ((List<string>)root.Attributes[Registrar.Attribute.Value])
-                    .Add(((TerminalTreeNode)root.Children[root.Children.Count - 2]).getLiteral());
+                root.append_child(simple_exp(root));
             }
 
             return root;
         }
 
-        private TreeNode simple_exp()
+        private TreeNode simple_exp(TreeNode Parent)
         {
-            NonTerminalTreeNode root = new NonTerminalTreeNode("Simple expression");
-            root.append_child(term());
-            root.Attributes.Add(Registrar.Attribute.Value, root.Children.Last().Attributes[Registrar.Attribute.Value]);
-            root.Attributes[Registrar.Attribute.Datatype] = 
-                (Registrar.Datatype)root.Children.Last().Attributes[Registrar.Attribute.Datatype];
+            TreeNode root = new TreeNode("Simple expression",NodeClass.SimpleExpression);
+            Parent.AssociateNode(root);
+            root.append_child(term(root));
             while (currentToken < _tokens.Count && (_tokens[currentToken].Type == Refrence.Class.ArithmeticAddition ||
                    _tokens[currentToken].Type == Refrence.Class.Arithmeticsubtraction ||
                    _tokens[currentToken].Type == Refrence.Class.ArithmeticsubtractionOperator2))
             {
-                TreeNode operatorNode = new TerminalTreeNode("Operator", _tokens[currentToken]);
+                TreeNode operatorNode = new TreeNode("Operator", _tokens[currentToken]);
                 match(_tokens[currentToken].Type);
                 currentToken++;
-                TreeNode child = term();
-
-                if ((Registrar.Datatype)child.Attributes[Registrar.Attribute.Datatype] != (Registrar.Datatype)root.Attributes[Registrar.Attribute.Datatype])
-                {
-                    ErrorList.Add(new Error("Datatype mismatch at %LINE%, unable to evaluate"
-                        .Replace("%LINE%", _tokens[currentToken].Line.ToString()), Error.ErrorType.Inconsistency));
-                }
+                TreeNode child = term(root);
 
                 if (root.Children.Count == 2)
                 {
-                    NonTerminalTreeNode leftChild = root;
-                    root = new NonTerminalTreeNode("Simple expression");
+                    TreeNode leftChild = root;
+                    root = new TreeNode("Simple expression",NodeClass.Expression);
                     root.append_child(leftChild);
                     root.append_child(operatorNode);
                     root.append_child(child);
-                    ((List<string>)root.Attributes[Registrar.Attribute.Value])
-                        .AddRange((List<string>)leftChild.Attributes[Registrar.Attribute.Value]);
-                    ((List<string>)root.Attributes[Registrar.Attribute.Value])
-                        .AddRange((List<string>)child.Attributes[Registrar.Attribute.Value]);
-                    ((List<string>)root.Attributes[Registrar.Attribute.Value])
-                        .Add(((TerminalTreeNode)operatorNode).getLiteral());
                 }
                 else
                 {
                     root.append_child(operatorNode);
                     root.append_child(child);
-                    ((List<string>)root.Attributes[Registrar.Attribute.Value])
-                        .AddRange((List<string>)child.Attributes[Registrar.Attribute.Value]);
-                    ((List<string>)root.Attributes[Registrar.Attribute.Value])
-                        .Add(((TerminalTreeNode)operatorNode).getLiteral());
                 }
             }
 
             return root;
         }
 
-        private TreeNode term()
+        private TreeNode term(TreeNode Parent)
         {
-            NonTerminalTreeNode root = new NonTerminalTreeNode("Term");
-            root.append_child(factor());
-            root.Attributes[Registrar.Attribute.Value] = new List<string>();
-            root.Attributes[Registrar.Attribute.Datatype] = 
-                (Registrar.Datatype)root.Children.Last().Attributes[Registrar.Attribute.Datatype];
-            ((List<string>)root.Attributes[Registrar.Attribute.Value]).AddRange
-                (((List<string>)root.Children.Last().Attributes[Registrar.Attribute.Value]));
-
+            TreeNode root = new TreeNode("Term",NodeClass.Term);
+            Parent.AssociateNode(root);
+            root.append_child(factor(root));
             while (currentToken < _tokens.Count && (_tokens[currentToken].Type == Refrence.Class.ArithmeticMultiplication ||
                    _tokens[currentToken].Type == Refrence.Class.ArithmeticDivision))
             {
-                TreeNode operatorNode = new TerminalTreeNode("Operator", _tokens[currentToken]);
+                TreeNode operatorNode = new TreeNode("Operator", _tokens[currentToken]);
                 match(_tokens[currentToken].Type);
                 currentToken++;
-                TreeNode child = factor();
-
-                if ((Registrar.Datatype)child.Attributes[Registrar.Attribute.Datatype]!= (Registrar.Datatype)root.Attributes[Registrar.Attribute.Datatype])
-                {
-                    ErrorList.Add(new Error("Datatype mismatch at line %LINE%, unable to evaluate"
-                        .Replace("%LINE%", _tokens[currentToken].Line.ToString()),Error.ErrorType.Inconsistency));
-                }
+                TreeNode child = factor(root);
 
                 if (root.Children.Count == 2)
                 {
-                    NonTerminalTreeNode leftChild = root;
-                    root = new NonTerminalTreeNode("Term");
+                    TreeNode leftChild = root;
+                    root = new TreeNode("Term",NodeClass.Term);
                     root.append_child(leftChild);
                     root.append_child(operatorNode);
                     root.append_child(child);
-                    ((List<string>)root.Attributes[Registrar.Attribute.Value])
-                        .AddRange((List<string>)leftChild.Attributes[Registrar.Attribute.Value]);
-                    ((List<string>)root.Attributes[Registrar.Attribute.Value])
-                        .AddRange((List<string>)child.Attributes[Registrar.Attribute.Value]);
-                    ((List<string>)root.Attributes[Registrar.Attribute.Value])
-                        .Add(((TerminalTreeNode)operatorNode).getLiteral());
                 }
                 else
                 {
                     root.append_child(operatorNode);
                     root.append_child(child);
-                    ((List<string>)root.Attributes[Registrar.Attribute.Value])
-                        .AddRange((List<string>)child.Attributes[Registrar.Attribute.Value]);
-                    ((List<string>)root.Attributes[Registrar.Attribute.Value])
-                        .Add(((TerminalTreeNode)operatorNode).getLiteral());
                 }
             }
             return root;
         }
 
-        private TreeNode factor()
+        private TreeNode factor(TreeNode Parent)
         {
             TreeNode root = null;
-
             if (Macros.Contains(_tokens[currentToken].Type))
             {
-                root = new TerminalTreeNode("Constant", _tokens[currentToken]);
-                root.Attributes[Registrar.Attribute.Value]=Rx.Macros[Refrence.Class.Macro_endl];
-                root.Attributes[Registrar.Attribute.Datatype]=Registrar.Datatype.Datatype_string;
+                root = new TreeNode("Constant", _tokens[currentToken]);
                 currentToken++;
                 return root;
             }
             if (_tokens[currentToken+1].Type==Refrence.Class.LeftBracket)
             {
-                Dictionary<Registrar.Attribute, object> Attributes = new Dictionary<Registrar.Attribute, object>();
-                if (Rx.Variables.ContainsKey(_tokens[currentToken].Literal))
-                {
-                    Attributes[Registrar.Attribute.Datatype] = Rx.Variables[_tokens[currentToken].Literal];
-                    Attributes[Registrar.Attribute.Value] = new List<string>() { "Fun(" + _tokens[currentToken].Literal + ")" };
-                }
-                else
-                {
-                    ErrorList.Add(new Error("Identifier Unacknolwedged at Line %LINE%".Replace("%LINE%", _tokens[currentToken].Line.ToString()), Error.ErrorType.Inconsistency));
-                    Attributes[Registrar.Attribute.Datatype] = Registrar.Datatype.Undefined;
-                    Attributes[Registrar.Attribute.Value] = new List<string>() { "Undefined" };
-                }
                 currentToken++;
-                root = function_call();
-                root.Attributes = Attributes;
+                root = function_call(Parent);
                 return root;
             }
-
             switch (_tokens[currentToken].Type)
             {
                 case Refrence.Class.DataType_int:
                 case Refrence.Class.DataType_float:
                 case Refrence.Class.DataType_string:
-                    root = new TerminalTreeNode("Constant", _tokens[currentToken]);
+                    root = new TreeNode("Constant", _tokens[currentToken]);
                     match(_tokens[currentToken].Type);
-                    root.Attributes[Registrar.Attribute.Value] = new List<string>() { "Const(" + _tokens[currentToken].Literal + ")" };
-                    root.Attributes[Registrar.Attribute.Datatype] = (Registrar.Datatype) _tokens[currentToken].Type-2;
-                    root.Attributes[Registrar.Attribute.Variable] = false;
                     currentToken++;
                     break;
                 case Refrence.Class.Assignment_Identifier:
-                    root = new TerminalTreeNode("Identifier", _tokens[currentToken]);
+                    root = new TreeNode("Identifier", _tokens[currentToken]);
                     match(_tokens[currentToken].Type);
-                    if (Rx.Variables.ContainsKey(_tokens[currentToken].Literal))
-                    {
-                        root.Attributes[Registrar.Attribute.Value] = new List<string>(){ "Var(" + _tokens[currentToken].Literal + ")"};
-                        root.Attributes[Registrar.Attribute.Datatype] = Rx.Variables[_tokens[currentToken].Literal];
-                        root.Attributes[Registrar.Attribute.Variable] = true;
-                    }
-                    else
-                    {
-                        ErrorList.Add(new Error("Identifier Unacknolwedged at Line %LINE%".Replace("%LINE%", _tokens[currentToken].Line.ToString()), Error.ErrorType.Inconsistency));
-                    }
                     currentToken++;
                     break;
                 case Refrence.Class.LeftBracket:
                     match(Refrence.Class.LeftBracket);
                     currentToken++;
-                    root = exp();
+                    root = exp(Parent);
                     match(Refrence.Class.RightBracket);
                     currentToken++;
                     break;

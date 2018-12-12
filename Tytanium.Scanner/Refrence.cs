@@ -90,10 +90,6 @@ namespace Tytanium.Scanner
             {Class.Comma,"," }
         };
 
-        public static void brighter()
-        {
-        }
-
         static Refrence()
         {
             int SkipStartOffset = 1;
