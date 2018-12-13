@@ -219,7 +219,7 @@ namespace Tytanium.Parser
         private TreeNode function_sig(TreeNode Parent)
         {
             currentToken--;
-            TreeNode fnHeader = new TreeNode("Function signature",NodeClass.Scope);
+            TreeNode fnHeader = new TreeNode("Function signature",NodeClass.FunctionSignature);
             Parent.AssociateNode(fnHeader);
             if (match(Refrence.Class.Assignment_Identifier))
                 fnHeader.append_child(new TreeNode("Function Name", _tokens[currentToken]));
@@ -285,7 +285,9 @@ namespace Tytanium.Parser
                 else if (_tokens[currentToken].Type == Refrence.Class.Directive_return)
                 {
                     TreeNode returnCode = new TreeNode("Return Statment",NodeClass.Directive);
-                    returnCode.append_child(new TreeNode("return directive", _tokens[currentToken]));
+                    fnBody.AssociateNode(returnCode);
+                    returnCode.Attributes[Attribute.Datatype] = Parent.Children[0].DataType;
+                    returnCode.append_child(new TreeNode("Return directive", _tokens[currentToken]));
                     currentToken++;
                     returnCode.append_child(exp(returnCode));
                     match(Refrence.Class.SemiColon);

@@ -40,7 +40,12 @@ namespace Tytanium.Parser
 
     public class Identifier
     {
+        public List<Datatype> DataTypeRestrictions = new List<Datatype>();
 
+        public bool FunctionID
+        {
+            get; set;
+        }
         public Identifier()
         {
 
@@ -65,19 +70,14 @@ namespace Tytanium.Parser
 
         public virtual Datatype DatatypeRestriction(int i)
         {
+            if (FunctionID)
+            {
+                return DataTypeRestrictions[i];
+            }
+
             return datatype;
         }
 
-    }
-
-    public class FunctionID : Identifier
-    {
-        public List<Datatype> Parameters = new List<Datatype>();
-
-        public override Datatype DatatypeRestriction(int i)
-        {
-            return Parameters[i];
-        }
     }
 
     public class Tree
@@ -119,6 +119,7 @@ namespace Tytanium.Parser
         const string CallMismatch = "Identifier incompatible in line %LINE%";
         const string unknwonIdentifier = "Identifier Unacknolwedged in Line %LINE%";
         const string returnTypemismatch = "Method type mismatch in Line %LINE%";
+        const string variableNameRedefinition = "Redefinition Not Possible in %LINE%";
         const string LineMacro = "%LINE%";
 
         varAppend fnAppendID;
@@ -155,11 +156,18 @@ namespace Tytanium.Parser
 
         void appendID(string s, Identifier id)
         {
+            if (fnAppendID!=null)
+            {
+                fnAppendID(s, id);
+                return;
+            }
             Variables.Add(s, id);
+            return;
         }
 
         Identifier verifyID(string s)
         {
+            string i = this.label;
             if (Variables.ContainsKey(s))
             {
                 return Variables[s];
@@ -304,14 +312,18 @@ namespace Tytanium.Parser
         {
             if (Children.Count != 0)
             {
-                if (N.NodeType==NodeClass.Assignment)
+                if (N.NodeType == NodeClass.Assignment)
                 {
 
                 }
-                else if (verifyID(N.label) == null)
+                else if (verifyID(N.Literal) != null)
+                {
+                    RegisterInconsistancy(variableNameRedefinition.Replace(LineMacro, N.Token.Line.ToString()));
+                }
+                else
                 {
                     N.Attributes[Attribute.Datatype] = Attributes[Attribute.Datatype];
-                    fnAppendID(N.Token.Literal, new Identifier(DataType, N.Token.Literal));
+                    appendID(N.Token.Literal, new Identifier(DataType, N.Token.Literal));
                 }
             }
             else
@@ -331,11 +343,11 @@ namespace Tytanium.Parser
                     RegisterInconsistancy(unknwonIdentifier.Replace(LineMacro, N.Token.Line.ToString()));
                     Attributes[Attribute.Datatype] = Datatype.Undefined;
                 }
-                else if (N.NodeType==NodeClass.Assignment && ID is FunctionID)
+                else if (N.NodeType==NodeClass.Assignment && ID.FunctionID)
                 {
                     RegisterInconsistancy(CallMismatch.Replace(LineMacro, N.Token.ToString()));
                 }
-                else if (N.NodeType==NodeClass.FunctionCall && !(ID is FunctionID))
+                else if (N.NodeType==NodeClass.FunctionCall && !(ID.FunctionID))
                 {
                     RegisterInconsistancy(CallMismatch.Replace(LineMacro, N.Token.ToString()));
                 }
@@ -377,22 +389,24 @@ namespace Tytanium.Parser
 
         private void ScopeResolution(TreeNode N)
         {
-
         }
 
         private void FnSignature(TreeNode N)
         {
+            if (N.NodeType==NodeClass.Scope)
+            {
+                N.Attributes[Attribute.Datatype] = DataType;
+                return;
+            }
             if (Children.Count != 0)
             {
-                FunctionID signature = verifyID(Children[0].Token.Literal) as FunctionID;
-                foreach (TreeNode Child in N.Children)
-                {
-                    fnAppendID(Child.Children[1].Token.Literal,
-                        new Identifier((Datatype)Child.Attributes[Attribute.Datatype], Child.Children[1].Token.Literal));
-                    signature.Parameters.Add((Datatype)Child.Attributes[Attribute.Datatype]);
-                }
+
+                Identifier signature = verifyID(Children[0].Token.Literal);
+                N.Attributes[Attribute.Datatype] = ((Datatype)N.Children[0].Token.Type - 2);
+                signature.DataTypeRestrictions.Add(((Datatype)N.Children[0].Token.Type - 2));
+
             }
-            else if (Children.Count == 0)
+            else
             {
                 Identifier signature = verifyID(N.Token.Literal);
                 if (signature == null)
@@ -401,6 +415,7 @@ namespace Tytanium.Parser
                 }
                 else
                 {
+                    signature.FunctionID = true;
                     Attributes[Attribute.Datatype] = signature.datatype;
                     N.Attributes[Attribute.Datatype] = signature.datatype;
                 }
@@ -411,10 +426,10 @@ namespace Tytanium.Parser
         {
             if (Children.Count!=0 && Children[0].Token.Type == Refrence.Class.Directive_return)
             {
-                //if (N.Attributes[Attribute.Datatype] != Attributes[Attribute.Datatype])
-                //{
-                //    RegisterInconsistancy(returnTypemismatch.Replace(LineMacro, N.Token.Line.ToString()));
-                //}
+                if ((Datatype)N.Attributes[Attribute.Datatype] != (Datatype)Attributes[Attribute.Datatype])
+                {
+                    RegisterInconsistancy(returnTypemismatch.Replace(LineMacro, Children[0].Token.Line.ToString()));
+                }
             }
         }
 
