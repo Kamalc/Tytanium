@@ -122,6 +122,11 @@ namespace Tytanium.Scanner
                     ErrorList.Add(new Error(EndOFFile.Replace("%ITEM%", "Comment Itiator").Replace("%LINE%", curLine.ToString()), Error.ErrorType.ScannerError));
                 }
 
+                if (SubjectText[ScannerLocation]=='\n')
+                {
+                    curLine++;
+                }
+
                 if (SubjectText[ScannerLocation] == '*' && ScannerLocation < SubjectText.Length - 2 && SubjectText[ScannerLocation + 1] == '/' && buffer.Length > 2)
                 {
                     buffer += "*/";
@@ -129,6 +134,7 @@ namespace Tytanium.Scanner
                     break;
                 }
                 buffer += SubjectText[ScannerLocation++];
+
 
             }
             Tokens.Add(new Token(buffer, Refrence.UpperClass.Comment));
@@ -142,6 +148,10 @@ namespace Tytanium.Scanner
             {
                 //ERROR DETECTION BRANCH
 
+                if (SubjectText[ScannerLocation] == '\n')
+                {
+                    curLine++;
+                }
 
                 buffer += SubjectText[ScannerLocation];
                 if (SubjectText[ScannerLocation] == '\"')
@@ -154,7 +164,7 @@ namespace Tytanium.Scanner
                     ScannerLocation++;
                     if (ScannerLocation >= SubjectText.Length)
                     {
-                        ErrorList.Add(new Error(EndOFFile.Replace("%ITEM%", "String Intiator").Replace("%LINE%", "containing string" + buffer), Error.ErrorType.ScannerError));
+                        ErrorList.Add(new Error(EndOFFile.Replace("%ITEM%", "String Intiator").Replace("%LINE%", curLine.ToString()), Error.ErrorType.ScannerError));
                         return;
                     }
                 }

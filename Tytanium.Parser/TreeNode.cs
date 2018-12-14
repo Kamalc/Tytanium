@@ -26,8 +26,9 @@ namespace Tytanium.Parser
         Datatype_int,
         Datatype_float,
         Datatype_string,
+        Datatype_boolean,
         Undefined,
-        Datatype_boolean
+        NULL
     }
 
     public enum Attribute
@@ -116,11 +117,13 @@ namespace Tytanium.Parser
     public class TreeNode
     {
         const string TypeMismatch = "Datatype mismatch in line %LINE%, unable to evaluate";
-        const string CallMismatch = "Identifier incompatible in line %LINE%";
+        const string Incompara = "Method %ID% parameters incompatible in line %LINE%";
+        const string CallMismatch = "Identifier %ID% incompatible definition in line %LINE%";
         const string unknwonIdentifier = "Identifier Unacknolwedged in Line %LINE%";
-        const string returnTypemismatch = "Method type mismatch in Line %LINE%";
+        const string returnTypemismatch = "Method return type mismatch in Line %LINE%";
         const string variableNameRedefinition = "Redefinition Not Possible in %LINE%";
         const string LineMacro = "%LINE%";
+        const string IDMACRO = "%ID%";
 
         varAppend fnAppendID;
         varVerify fnVerifyID;
@@ -129,7 +132,7 @@ namespace Tytanium.Parser
         List<Error> Inconsisities = new List<Error>();
         public Dictionary<string, Identifier> Variables = new Dictionary<string, Identifier>();
 
-        NodeClass NodeType;
+        public NodeClass NodeType;
         public void setDelegates(varAppend a, varVerify b, inConsistancyReg c)
         {
             fnAppendID = a;
@@ -139,7 +142,8 @@ namespace Tytanium.Parser
 
         public void AssociateNode(TreeNode N)
         {
-            if (NodeType==NodeClass.Scope)
+            if (N == null) { return; }
+            if (NodeType==NodeClass.Scope || NodeType==NodeClass.FunctionSignature)
             {
                 N.setDelegates(appendID, verifyID, fnRegisterInconsistancy);
             }
@@ -156,18 +160,11 @@ namespace Tytanium.Parser
 
         void appendID(string s, Identifier id)
         {
-            if (fnAppendID!=null)
-            {
-                fnAppendID(s, id);
-                return;
-            }
             Variables.Add(s, id);
-            return;
         }
 
         Identifier verifyID(string s)
         {
-            string i = this.label;
             if (Variables.ContainsKey(s))
             {
                 return Variables[s];
@@ -194,15 +191,72 @@ namespace Tytanium.Parser
             }
         }
 
-        public Dictionary<Attribute, object> Attributes = new Dictionary<Attribute, object>();
-
         public readonly List<TreeNode> Children = new List<TreeNode>();
 
+        public Dictionary<Attribute, object> Attributes = new Dictionary<Attribute, object>();
+
+        //Datatype of the node
         public Datatype DataType
         {
             get
             {
-                return (Datatype)Attributes[Attribute.Datatype];
+                if (Attributes.ContainsKey(Attribute.Datatype))
+                {
+                    return (Datatype)Attributes[Attribute.Datatype];
+                }
+                return Datatype.NULL;
+            }
+            set
+            {
+                Attributes[Attribute.Datatype] = value;
+            }
+        }
+
+        //Value of the node
+        public string Value
+        {
+            get
+            {
+                if (Attributes.ContainsKey(Attribute.Value))
+                {
+                    if (Attributes[Attribute.Value] is string)
+                    {
+                        return (string)Attributes[Attribute.Value];
+                    }
+                    else
+                    {
+                        return String.Join(" ", ((List<string>)(Attributes[Attribute.Value])).ToArray());
+                    }
+                }
+                else
+                {
+                    return Token.Literal;
+                }
+            }
+        }
+
+        //Retrieves the actual literal of the node
+        public string Literal
+        {
+            get
+            {
+                if (NodeType == NodeClass.Terminal)
+                    return Token.Literal;
+                else
+                    return Children[0].Literal;
+            }
+        }
+
+        //Get Label for Tree View construction
+        public string getLabel()
+        {
+            if (NodeType != NodeClass.Terminal)
+            {
+                return label;
+            }
+            else
+            {
+                return label + " : " + Token.Literal;
             }
         }
 
@@ -210,7 +264,14 @@ namespace Tytanium.Parser
         {
             get
             {
-                return (Token)Attributes[Attribute.HostedToken];
+                if (Attributes.ContainsKey(Attribute.HostedToken))
+                {
+                    return (Token)Attributes[Attribute.HostedToken];
+                }
+                else
+                {
+                    return null;
+                }
             }
         }
 
@@ -238,25 +299,7 @@ namespace Tytanium.Parser
 
         public bool Composite = false;
 
-        public string Literal
-        {
-            get
-            {
-                return Token.Literal;
-            }
-        }
 
-        public string getLabel()
-        {
-            if (NodeType!=NodeClass.Terminal)
-            {
-                return label;
-            }
-            else
-            {
-                return label + " : " + Token.Literal;
-            }
-        }
         public int startingToken
         {
             get;
@@ -271,6 +314,7 @@ namespace Tytanium.Parser
 
         public void append_child(TreeNode Entry)
         {
+            if (Entry == null || Entry.Line==-1) { return; }
             Assimilators[NodeType](Entry);
             AssociateNode(Entry);
             Children.Add(Entry);
@@ -292,7 +336,7 @@ namespace Tytanium.Parser
                 {NodeClass.Term,Term },
                 {NodeClass.ifCondition,ifCondition },
                 {NodeClass.LoopBound,LoopBound},
-                {NodeClass.FunctionCall,RuntimeCall },
+                {NodeClass.FunctionCall,FunctionCall },
                 {NodeClass.Assignment,Assignment },
                 {NodeClass.SimpleExpression,simpleExpression }
             };
@@ -303,8 +347,41 @@ namespace Tytanium.Parser
 
         }
 
+        public int Line
+        {
+            get
+            {
+                if (Attributes.ContainsKey(Attribute.HostedToken))
+                {
+                    return Token.Line;
+                }
+                else
+                {
+                    if (Children.Count>0)
+                        return Children[0].Line;
+                    else return -1;
+                }
+            }
+        }
+
         private void FunctionCall(TreeNode N)
         {
+            Identifier ID;
+            if (Children.Count == 0)
+            {
+                ID = verifyID(N.Literal);
+                return;
+            }
+            else { ID = verifyID(Literal); }
+
+            if (!ID.FunctionID)
+            {
+                RegisterInconsistancy(CallMismatch.Replace(LineMacro, N.Line.ToString()).Replace(IDMACRO,Literal));
+            }
+            else if (ID.DatatypeRestriction(Children.Count - 1) != N.DataType)
+            {
+                RegisterInconsistancy(Incompara.Replace(LineMacro, N.Line.ToString()).Replace("%ID%",Children[0].Literal));
+            }
 
         }
 
@@ -323,7 +400,7 @@ namespace Tytanium.Parser
                 else
                 {
                     N.Attributes[Attribute.Datatype] = Attributes[Attribute.Datatype];
-                    appendID(N.Token.Literal, new Identifier(DataType, N.Token.Literal));
+                    fnAppendID(N.Token.Literal, new Identifier(DataType, N.Token.Literal));
                 }
             }
             else
@@ -335,60 +412,33 @@ namespace Tytanium.Parser
 
         public void RuntimeCall(TreeNode N)
         {
-            if (Children.Count == 0)
+            Identifier ID;
+            ID = verifyID(N.Literal);
+            //First Conditional: if ID not existant then halt, if it exists than establish the node's properties
+            if (ID == null)
             {
-                Identifier ID = verifyID(N.Token.Literal);
-                if (ID == null)
-                {
-                    RegisterInconsistancy(unknwonIdentifier.Replace(LineMacro, N.Token.Line.ToString()));
-                    Attributes[Attribute.Datatype] = Datatype.Undefined;
-                }
-                else if (N.NodeType==NodeClass.Assignment && ID.FunctionID)
-                {
-                    RegisterInconsistancy(CallMismatch.Replace(LineMacro, N.Token.ToString()));
-                }
-                else if (N.NodeType==NodeClass.FunctionCall && !(ID.FunctionID))
-                {
-                    RegisterInconsistancy(CallMismatch.Replace(LineMacro, N.Token.ToString()));
-                }
+                if (N.NodeType == NodeClass.Terminal && N.Token.Type!=Refrence.Class.Assignment_Identifier) { N.DataType = (Datatype)N.Token.Type - 2; }
                 else
                 {
-                    N.Attributes[Attribute.Datatype] = ID.datatype;
-                    Attributes[Attribute.Datatype] = ID.datatype;
+                    RegisterInconsistancy(unknwonIdentifier.Replace(LineMacro, N.Line.ToString()).Replace(IDMACRO, N.Literal.ToString()));
+                    return;
                 }
             }
-            else
+            else { N.DataType = ID.datatype; }
+
+            //First Conditional: if ID is a function then call the designated subroutine, else compare it to the assigning datatype
+            if (Children.Count == 0)
             {
-                Datatype EntryDatatype=Datatype.Undefined;
-                Identifier ID = verifyID(Children[0].Token.Literal);
-                if (N.NodeType==NodeClass.Assignment)
-                {
-                    EntryDatatype = N.DataType;
-                }
-                else
-                {
-                    if (N.Token.Type==Refrence.Class.Assignment_Identifier)
-                    {
-                        Identifier EntryID = verifyID(N.Token.Literal);
-                        EntryDatatype = EntryID.datatype;
-                    }
-                    else
-                    {
-                        EntryDatatype = (Datatype)N.Token.Type - 2;
-                    }
-                    N.Attributes[Attribute.Datatype] = EntryDatatype;
-                }
-
-                if (ID.DatatypeRestriction(Children.Count - 1) != EntryDatatype)
-                {
-                    RegisterInconsistancy(TypeMismatch.Replace(LineMacro, N.Token.Line.ToString()));
-                }
-
+                DataType = ID.datatype;
+                if (verifyID(N.Literal).FunctionID) { NodeType = NodeClass.FunctionCall; }
+                else { NodeType = NodeClass.Assignment; }
+                return;
             }
         }
 
         private void ScopeResolution(TreeNode N)
         {
+
         }
 
         private void FnSignature(TreeNode N)
@@ -444,7 +494,7 @@ namespace Tytanium.Parser
             {
                 if (DataType!=N.DataType)
                 {
-                    RegisterInconsistancy(TypeMismatch.Replace(LineMacro,N.Token.Line.ToString()));
+                    RegisterInconsistancy(TypeMismatch.Replace(LineMacro,N.Line.ToString()));
                 }
             }
         }
@@ -473,7 +523,7 @@ namespace Tytanium.Parser
             {
                 if (N.DataType != DataType)
                 {
-                    RegisterInconsistancy(TypeMismatch.Replace(LineMacro, N.Token.Line.ToString()));
+                    RegisterInconsistancy(TypeMismatch.Replace(LineMacro, N.Line.ToString()));
                 }
                 if (N.Attributes[Attribute.Value] is List<string>)
                 {
@@ -506,7 +556,7 @@ namespace Tytanium.Parser
             {
                 if (N.DataType != DataType)
                 {
-                    RegisterInconsistancy(TypeMismatch.Replace(LineMacro, N.Token.Line.ToString()));
+                    RegisterInconsistancy(TypeMismatch.Replace(LineMacro, N.Line.ToString()));
                 }
                 if (N.Attributes[Attribute.Value] is List<string>)
                 {
@@ -555,6 +605,18 @@ namespace Tytanium.Parser
             ((List<string>)Attributes[Attribute.Value]).Add(temp);
         }
 
+        void SmartAppend(string Gen,string Literal)
+        {
+            if (Children.Count >= 2)
+            {
+                postFixAppend(Gen + "(" + Literal + ")");
+            }
+            else
+            {
+                appendToValue(Gen + "(" + Literal + ")");
+            }
+        }
+
         private void Term(TreeNode N)
         {
             if (N.NodeType == NodeClass.Terminal)
@@ -571,31 +633,22 @@ namespace Tytanium.Parser
                         }
                         else if ((Datatype)N.Attributes[Attribute.Datatype]!= (Datatype)Attributes[Attribute.Datatype])
                         { RegisterInconsistancy(TypeMismatch.Replace(LineMacro, N.Token.Line.ToString())); }
-
-                        if (Children.Count >= 2)
-                        {
-                            postFixAppend("Const(" + N.Literal + ")");
-                        }
-                        else
-                        {
-                            appendToValue("Const(" + N.Literal + ")");
-                        }
+                        SmartAppend("Const", N.Literal);
                         break;
                     case Refrence.Class.Assignment_Identifier:
                         Identifier ID = verifyID(N.Literal);
-                        if (ID == null) { RegisterInconsistancy(unknwonIdentifier.Replace(LineMacro, N.Token.Line.ToString())); }
+                        if (ID == null)
+                        {
+                            RegisterInconsistancy(unknwonIdentifier.Replace(LineMacro, N.Token.Line.ToString()));
+                            Attributes[Attribute.Datatype] = Datatype.Undefined;
+                            N.Attributes[Attribute.Datatype] = Datatype.Undefined;
+                            SmartAppend("Unknown", N.Literal);
+                        }
                         else
                         {
                             Attributes[Attribute.Datatype] = ID.datatype;
                             N.Attributes[Attribute.Datatype] = ID.datatype;
-                            if (Children.Count == 2)
-                            {
-                                postFixAppend("Var(" + N.Literal + ")");
-                            }
-                            else
-                            {
-                                appendToValue("Var(" + N.Literal + ")");
-                            }
+                            SmartAppend("Var", N.Literal);
                         }
                         break;
                     default:
@@ -619,7 +672,7 @@ namespace Tytanium.Parser
                     }
                     else
                     {
-                        RegisterInconsistancy(TypeMismatch.Replace(LineMacro, N.Token.Line.ToString()));
+                        RegisterInconsistancy(TypeMismatch.Replace(LineMacro, N.Line.ToString()));
                     }
                 }
 
@@ -635,7 +688,7 @@ namespace Tytanium.Parser
                     string val = "Fun(" + N.Children[0].Literal+"(";
                     for (int i = 1; i < N.Children.Count; i++)
                     {
-                        val += N.Children[i].Literal;
+                        val += N.Children[i].Value;
                         if (i < N.Children.Count - 1) { val += ","; }
                     }
                     appendToValue(val+"))");

@@ -33,12 +33,21 @@ namespace Tytanium.Parser
 
 
 
+        const string LineMacro = "%LINE%";
+        const string TokenMacro = "%TOKEN%";
+        const string EndOfFile = "End of File was found before %TOKEN% matching for scope intiated in line %LINE%";
+
+        private Error CreateError(string E, string Token,int line)
+        {
+            string error = E.Replace(TokenMacro, Token).Replace(LineMacro, line.ToString());
+            return new Error(error, Error.ErrorType.ParserError);
+        }
+
         public Parser(List<Token> tokens)
         {
             _tokens = tokens;
             ErrorList = new List<Error>();
             currentToken = 0;
-
 
 
             //Intializing parser refrence dictionary
@@ -76,9 +85,7 @@ namespace Tytanium.Parser
             Parent.AssociateNode(identifierNode);
             identifierNode.append_child(new TreeNode("Calling Identifier", _tokens[currentToken]));
             currentToken++;
-
             identifierNode.append_child(statement(identifierNode));
-
             identifierNode.Composite = true;
             return identifierNode;
         }
@@ -144,7 +151,7 @@ namespace Tytanium.Parser
             //A single statment is made of multiple statments yet intiated here
             //then a flag called composite is raised to avoid checking for a not
             //Existing semicolon
-            if (!root.Composite && match(Refrence.Class.SemiColon))
+            if (root==null||!root.Composite && match(Refrence.Class.SemiColon))
             {
                 currentToken++;
             }
@@ -202,14 +209,15 @@ namespace Tytanium.Parser
             int parameterCount = 1;
             while (_tokens[currentToken].Type != Refrence.Class.RightBracket)
             {
-                fnHeader.append_child(new TreeNode("Parameter# " + parameterCount.ToString(), _tokens[currentToken]));
-                currentToken++;
+                TreeNode Px = exp(fnHeader);
+                if (Px == null) { return null; }
                 if (_tokens[currentToken].Type == Refrence.Class.RightBracket || !match(Refrence.Class.Comma))
                 {
                     break;
                 }
                 parameterCount++;
                 currentToken++;
+                fnHeader.append_child(Px);
             }
             currentToken++;
             return fnHeader;
@@ -385,8 +393,15 @@ namespace Tytanium.Parser
                     root.append_child(seQ);
                     seQ = new TreeNode("Else Body",NodeClass.Scope);
                 }
+
                 //All the branching above sets the seQ for this linear statment to append statments from tokens
                 seQ.append_child(statement(seQ));
+                if (currentToken == _tokens.Count)
+                {
+                    ErrorList.Add(CreateError(EndOfFile, "end", root.Children[0].Line));
+                    root.append_child(seQ);
+                    return root;
+                }
             }
             root.append_child(seQ);
             match(Refrence.Class.BranchingAgent_end);
@@ -454,7 +469,11 @@ namespace Tytanium.Parser
         {
             TreeNode root = new TreeNode("Expression",NodeClass.Expression);
             Parent.AssociateNode(root);
-            root.append_child(simple_exp(root));
+
+            TreeNode Tx = simple_exp(root);
+            if (Tx != null && Tx.Children.Count != 0) { root.append_child(Tx); }
+            else { return null; }
+
             while (currentToken < _tokens.Count && (_tokens[currentToken].Type == Refrence.Class.ComparisonOperatorLessThan ||
                 _tokens[currentToken].Type == Refrence.Class.ComparisonOperatorEQ ||
                 _tokens[currentToken].Type == Refrence.Class.ComparisonOperatorGreaterThan ||
@@ -473,9 +492,11 @@ namespace Tytanium.Parser
 
         private TreeNode simple_exp(TreeNode Parent)
         {
-            TreeNode root = new TreeNode("Simple expression",NodeClass.SimpleExpression);
+            TreeNode root = new TreeNode("Simple expression", NodeClass.SimpleExpression);
             Parent.AssociateNode(root);
-            root.append_child(term(root));
+            TreeNode Tx = term(root);
+            if (Tx!=null && Tx.Children.Count != 0) { root.append_child(Tx); }
+            else { return null; }
             while (currentToken < _tokens.Count && (_tokens[currentToken].Type == Refrence.Class.ArithmeticAddition ||
                    _tokens[currentToken].Type == Refrence.Class.Arithmeticsubtraction ||
                    _tokens[currentToken].Type == Refrence.Class.ArithmeticsubtractionOperator2))
@@ -507,7 +528,10 @@ namespace Tytanium.Parser
         {
             TreeNode root = new TreeNode("Term",NodeClass.Term);
             Parent.AssociateNode(root);
-            root.append_child(factor(root));
+            TreeNode Tx = factor(root);
+            if (Tx != null && Tx.Children.Count != 0) { root.append_child(Tx); }
+            else { return null; }
+            root.append_child(Tx);
             while (currentToken < _tokens.Count && (_tokens[currentToken].Type == Refrence.Class.ArithmeticMultiplication ||
                    _tokens[currentToken].Type == Refrence.Class.ArithmeticDivision))
             {
