@@ -471,7 +471,7 @@ namespace Tytanium.Parser
             Parent.AssociateNode(root);
 
             TreeNode Tx = simple_exp(root);
-            if (Tx != null && Tx.Children.Count != 0) { root.append_child(Tx); }
+            if (Tx != null && Tx.DataType != Datatype.NULL) { root.append_child(Tx); }
             else { return null; }
 
             while (currentToken < _tokens.Count && (_tokens[currentToken].Type == Refrence.Class.ComparisonOperatorLessThan ||
@@ -495,7 +495,7 @@ namespace Tytanium.Parser
             TreeNode root = new TreeNode("Simple expression", NodeClass.SimpleExpression);
             Parent.AssociateNode(root);
             TreeNode Tx = term(root);
-            if (Tx!=null && Tx.Children.Count != 0) { root.append_child(Tx); }
+            if (Tx!=null && Tx.DataType!=Datatype.NULL) { root.append_child(Tx); }
             else { return null; }
             while (currentToken < _tokens.Count && (_tokens[currentToken].Type == Refrence.Class.ArithmeticAddition ||
                    _tokens[currentToken].Type == Refrence.Class.Arithmeticsubtraction ||
@@ -529,7 +529,7 @@ namespace Tytanium.Parser
             TreeNode root = new TreeNode("Term",NodeClass.Term);
             Parent.AssociateNode(root);
             TreeNode Tx = factor(root);
-            if (Tx != null && Tx.Children.Count != 0) { root.append_child(Tx); }
+            if (Tx != null) { root.append_child(Tx); }
             else { return null; }
             root.append_child(Tx);
             while (currentToken < _tokens.Count && (_tokens[currentToken].Type == Refrence.Class.ArithmeticMultiplication ||
@@ -550,6 +550,7 @@ namespace Tytanium.Parser
                 }
                 else
                 {
+                    root.Attributes[Attribute.Datatype] = child.DataType;
                     root.append_child(operatorNode);
                     root.append_child(child);
                 }

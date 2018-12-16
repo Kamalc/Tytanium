@@ -43,6 +43,8 @@ namespace Tytanium.Parser
     {
         public List<Datatype> DataTypeRestrictions = new List<Datatype>();
 
+        public bool Intialized = false;
+
         public bool FunctionID
         {
             get; set;
@@ -132,7 +134,11 @@ namespace Tytanium.Parser
         List<Error> Inconsisities = new List<Error>();
         public Dictionary<string, Identifier> Variables = new Dictionary<string, Identifier>();
 
-        public NodeClass NodeType;
+        public NodeClass NodeType
+        {
+            get;
+            private set;
+        }
         public void setDelegates(varAppend a, varVerify b, inConsistancyReg c)
         {
             fnAppendID = a;
@@ -338,13 +344,18 @@ namespace Tytanium.Parser
                 {NodeClass.LoopBound,LoopBound},
                 {NodeClass.FunctionCall,FunctionCall },
                 {NodeClass.Assignment,Assignment },
-                {NodeClass.SimpleExpression,simpleExpression }
+                {NodeClass.SimpleExpression,simpleExpression },
+                {NodeClass.Terminal,Terminal }
             };
+        }
+
+        private void Terminal(TreeNode N)
+        {
+            throw new NotImplementedException();
         }
 
         private void LoopBound(TreeNode N)
         {
-
         }
 
         public int Line
@@ -370,19 +381,15 @@ namespace Tytanium.Parser
             if (Children.Count == 0)
             {
                 ID = verifyID(N.Literal);
+                if (!ID.FunctionID) { RegisterInconsistancy(CallMismatch.Replace(LineMacro, N.Line.ToString()).Replace(IDMACRO, N.Literal)); }
                 return;
             }
             else { ID = verifyID(Literal); }
 
-            if (!ID.FunctionID)
+            if (ID.DatatypeRestriction(Children.Count - 1) != N.DataType)
             {
-                RegisterInconsistancy(CallMismatch.Replace(LineMacro, N.Line.ToString()).Replace(IDMACRO,Literal));
+                RegisterInconsistancy(Incompara.Replace(LineMacro, N.Line.ToString()).Replace(IDMACRO,Children[0].Literal));
             }
-            else if (ID.DatatypeRestriction(Children.Count - 1) != N.DataType)
-            {
-                RegisterInconsistancy(Incompara.Replace(LineMacro, N.Line.ToString()).Replace("%ID%",Children[0].Literal));
-            }
-
         }
 
         public void declaration(TreeNode N)
@@ -438,7 +445,6 @@ namespace Tytanium.Parser
 
         private void ScopeResolution(TreeNode N)
         {
-
         }
 
         private void FnSignature(TreeNode N)
@@ -450,11 +456,9 @@ namespace Tytanium.Parser
             }
             if (Children.Count != 0)
             {
-
                 Identifier signature = verifyID(Children[0].Token.Literal);
                 N.Attributes[Attribute.Datatype] = ((Datatype)N.Children[0].Token.Type - 2);
                 signature.DataTypeRestrictions.Add(((Datatype)N.Children[0].Token.Type - 2));
-
             }
             else
             {
@@ -501,7 +505,6 @@ namespace Tytanium.Parser
 
         private void ifCondition(TreeNode N)
         {
-
         }
 
         private void simpleExpression(TreeNode N)

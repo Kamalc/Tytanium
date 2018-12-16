@@ -33,6 +33,7 @@ namespace Tytanium.Scanner
 
         bool isWS()
         {
+            if (ScannerLocation >= SubjectText.Length - 1) { return false; }
             if (SubjectText[ScannerLocation] == ' ' || SubjectText[ScannerLocation] == '\n' || SubjectText[ScannerLocation] == '\t')
                 return true;
             return false;
@@ -101,7 +102,7 @@ namespace Tytanium.Scanner
         void Literal()
         {
             string buffer = "";
-            while (!isWS() && Alphabet.Contains(SubjectText[ScannerLocation]) || Numerics.Contains(SubjectText[ScannerLocation]) && ScannerLocation < SubjectText.Length)
+            while (ScannerLocation < SubjectText.Length && (!isWS() && Alphabet.Contains(SubjectText[ScannerLocation]) || Numerics.Contains(SubjectText[ScannerLocation])))
             {
                 buffer += SubjectText[ScannerLocation++];
             }
