@@ -211,13 +211,13 @@ namespace Tytanium.Parser
             {
                 TreeNode Px = exp(fnHeader);
                 if (Px == null) { return null; }
+                parameterCount++;
+                fnHeader.append_child(Px);
                 if (_tokens[currentToken].Type == Refrence.Class.RightBracket || !match(Refrence.Class.Comma))
                 {
                     break;
                 }
-                parameterCount++;
                 currentToken++;
-                fnHeader.append_child(Px);
             }
             currentToken++;
             return fnHeader;
@@ -529,9 +529,8 @@ namespace Tytanium.Parser
             TreeNode root = new TreeNode("Term",NodeClass.Term);
             Parent.AssociateNode(root);
             TreeNode Tx = factor(root);
-            if (Tx != null) { root.append_child(Tx); }
+            if (Tx != null){ root.append_child(Tx); }
             else { return null; }
-            root.append_child(Tx);
             while (currentToken < _tokens.Count && (_tokens[currentToken].Type == Refrence.Class.ArithmeticMultiplication ||
                    _tokens[currentToken].Type == Refrence.Class.ArithmeticDivision))
             {
@@ -540,6 +539,12 @@ namespace Tytanium.Parser
                 currentToken++;
                 TreeNode child = factor(root);
 
+                if (root.Children.Count==0)
+                {
+                    root.Attributes[Attribute.Datatype] = child.DataType;
+                    root.append_child(operatorNode);
+                    root.append_child(child);
+                }
                 if (root.Children.Count == 2)
                 {
                     TreeNode leftChild = root;
@@ -550,7 +555,6 @@ namespace Tytanium.Parser
                 }
                 else
                 {
-                    root.Attributes[Attribute.Datatype] = child.DataType;
                     root.append_child(operatorNode);
                     root.append_child(child);
                 }

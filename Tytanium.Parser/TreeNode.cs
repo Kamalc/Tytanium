@@ -381,6 +381,7 @@ namespace Tytanium.Parser
             if (Children.Count == 0)
             {
                 ID = verifyID(N.Literal);
+                DataType = ID.datatype;
                 if (!ID.FunctionID) { RegisterInconsistancy(CallMismatch.Replace(LineMacro, N.Line.ToString()).Replace(IDMACRO, N.Literal)); }
                 return;
             }

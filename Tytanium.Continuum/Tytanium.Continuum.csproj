@@ -1,0 +1,233 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{51C975FA-ECDE-49E1-852E-FA357B552F11}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Tytanium.Continuum</RootNamespace>
+    <AssemblyName>Tytanium.Continuum</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>continuum.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="LiveParseTree.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="LiveParseTree.Designer.cs">
+      <DependentUpon>LiveParseTree.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Editor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Editor.Designer.cs">
+      <DependentUpon>Editor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Home.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Home.Designer.cs">
+      <DependentUpon>Home.cs</DependentUpon>
+    </Compile>
+    <Compile Include="NewFile.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="NewFile.designer.cs">
+      <DependentUpon>NewFile.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Output.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Output.designer.cs">
+      <DependentUpon>Output.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Splashscreen.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Splashscreen.Designer.cs">
+      <DependentUpon>Splashscreen.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="LiveParseTree.resx">
+      <DependentUpon>LiveParseTree.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Editor.resx">
+      <DependentUpon>Editor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Home.resx">
+      <DependentUpon>Home.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NewFile.resx">
+      <DependentUpon>NewFile.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Output.resx">
+      <DependentUpon>Output.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <EmbeddedResource Include="Splashscreen.resx">
+      <DependentUpon>Splashscreen.cs</DependentUpon>
+    </EmbeddedResource>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\AddNew.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\GearIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\SaveIcon1.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Start.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\MenuBarPattern3.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Close.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\CloseHighlight.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Minimize.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\MinimizeHighlight.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Puzzle2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\MenuBackground.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="continuum.ico" />
+    <Content Include="Contiuum Icon.ico" />
+    <None Include="Resources\Pattern.png" />
+    <None Include="Resources\NewFile.png" />
+    <None Include="Resources\Open.png" />
+    <None Include="Resources\MaximizedHighlight.png" />
+    <None Include="Resources\Maximized.png" />
+    <None Include="Resources\SEQ0035.png" />
+    <None Include="Resources\SEQ0034.png" />
+    <None Include="Resources\SEQ0033.png" />
+    <None Include="Resources\SEQ0032.png" />
+    <None Include="Resources\SEQ0031.png" />
+    <None Include="Resources\SEQ0030.png" />
+    <None Include="Resources\SEQ0029.png" />
+    <None Include="Resources\SEQ0028.png" />
+    <None Include="Resources\SEQ0027.png" />
+    <None Include="Resources\SEQ0026.png" />
+    <None Include="Resources\SEQ0025.png" />
+    <None Include="Resources\SEQ0024.png" />
+    <None Include="Resources\SEQ0023.png" />
+    <None Include="Resources\SEQ0022.png" />
+    <None Include="Resources\SEQ0021.png" />
+    <None Include="Resources\SEQ0020.png" />
+    <None Include="Resources\SEQ0019.png" />
+    <None Include="Resources\SEQ0018.png" />
+    <None Include="Resources\SEQ0017.png" />
+    <None Include="Resources\SEQ0016.png" />
+    <None Include="Resources\SEQ0015.png" />
+    <None Include="Resources\SEQ0014.png" />
+    <None Include="Resources\SEQ0013.png" />
+    <None Include="Resources\SEQ0012.png" />
+    <None Include="Resources\SEQ0011.png" />
+    <None Include="Resources\SEQ0010.png" />
+    <None Include="Resources\SEQ0009.png" />
+    <None Include="Resources\SEQ0008.png" />
+    <None Include="Resources\SEQ0007.png" />
+    <None Include="Resources\SEQ0006.png" />
+    <None Include="Resources\SEQ0005.png" />
+    <None Include="Resources\SEQ0004.png" />
+    <None Include="Resources\SEQ0003.png" />
+    <None Include="Resources\SEQ0002.png" />
+    <None Include="Resources\SEQ0001.png" />
+    <None Include="Resources\ContinuumLogo.png" />
+    <None Include="Resources\MenuSelection1.png" />
+    <None Include="Resources\MenuSelection.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Tytanium.Handler\Tytanium.Handler.csproj">
+      <Project>{ce4f1a96-aa86-434b-bc4f-5eb9c662db9f}</Project>
+      <Name>Tytanium.Handler</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Tytanium.Parser\Tytanium.Parser.csproj">
+      <Project>{00b84ad3-e8dc-418f-acca-944c3203a1c3}</Project>
+      <Name>Tytanium.Parser</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Tytanium.Scanner\Tytanium.Scanner.csproj">
+      <Project>{93124669-a173-4472-9503-1cfd4d73c84c}</Project>
+      <Name>Tytanium.Scanner</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
