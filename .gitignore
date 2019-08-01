@@ -2,6 +2,10 @@
 *.suo
 *.user
 *.sln.docstates
+*.exe
+*.bin
+*.dll
+*.pdb
 
 # Build results
 [Dd]ebug/
